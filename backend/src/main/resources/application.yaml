@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: theme-park-industries-scrapper-+backend
+  datasource:
+    url: jdbc:postgresql://localhost:5432/theme-park-industries
+    username: postgres
+    password: dY8PTvb19A52DR7FvYmsl701ppgFXmx4TqpIBUaSdOrCAXtmmBggCG3JZGup85tY 
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
