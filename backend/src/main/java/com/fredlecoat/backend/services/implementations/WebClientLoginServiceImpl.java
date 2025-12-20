@@ -6,17 +6,12 @@ import java.util.Map;
 
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.reactive.function.client.WebClient;
 
 import com.fredlecoat.backend.services.LoginService;
 
 @Service
 public class WebClientLoginServiceImpl implements LoginService {
-    @Autowired
-    private WebClient webClient;
-
     @Override
     public boolean isLogged() {
         try {

@@ -1,10 +1,10 @@
-package com.fredlecoat.theme_park_industries_scrap;
+package com.fredlecoat.backend;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class ThemeParkIndustriesScrapApplicationTests {
+class BackendApplicationTests {
 
 	@Test
 	void contextLoads() {
