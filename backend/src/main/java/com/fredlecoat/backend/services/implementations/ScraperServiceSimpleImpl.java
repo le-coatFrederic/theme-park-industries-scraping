@@ -2,6 +2,7 @@ package com.fredlecoat.backend.services.implementations;
 
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.fredlecoat.backend.entities.requests.MainPlayerRequest;
@@ -9,22 +10,22 @@ import com.fredlecoat.backend.services.DashboardService;
 import com.fredlecoat.backend.services.PlayerService;
 import com.fredlecoat.backend.services.ScraperService;
 
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+
 @Service
+@NoArgsConstructor
+@AllArgsConstructor
 public class ScraperServiceSimpleImpl implements ScraperService {
 
-    private final TextToDataConverterServiceImpl textConverter;
-    private final DashboardService dashboardService;
-    private final PlayerService playerService;
+    @Autowired
+    private TextToDataConverterServiceImpl textConverter;
 
-    public ScraperServiceSimpleImpl(
-        TextToDataConverterServiceImpl textConverter,
-        DashboardService dashboardService,
-        PlayerService playerService
-    ) {
-        this.textConverter = textConverter;
-        this.dashboardService = dashboardService;
-        this.playerService = playerService;
-    }
+    @Autowired
+    private DashboardService dashboardService;
+
+    @Autowired
+    private PlayerService playerService;
 
    @Override
     public void getPersonalData() {

@@ -3,7 +3,7 @@ package com.fredlecoat.backend.entities.mappers;
 import org.springframework.stereotype.Component;
 
 import com.fredlecoat.backend.entities.PlayerEntity;
-import com.fredlecoat.backend.entities.requests.MainPlayerRequest;
+import com.fredlecoat.backend.entities.dtos.MainPlayerRequest;
 
 @Component
 public class PlayerMapper {
@@ -13,10 +13,7 @@ public class PlayerMapper {
         }
 
         return new PlayerEntity(
-            request.name(),
-            request.money(),
-            request.level(),
-            request.experience()
+            request.name()
         );
     }
 }

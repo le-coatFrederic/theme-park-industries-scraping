@@ -16,6 +16,7 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.fredlecoat.backend.configuration.WebSiteAccessConfig;
 import com.fredlecoat.backend.entities.DashboardActivityEntity;
 import com.fredlecoat.backend.services.DashboardService;
 import com.fredlecoat.backend.services.LoginService;
@@ -30,8 +31,8 @@ public class SeleniumTPIOldInterfaceDashboardServiceImpl implements DashboardSer
     @Autowired
     private LoginService loginService;
     
-    //@Value("${scraper.dashboard.url}")
-    private String dashboardUrl = "https://themeparkindustries.com/tpiv5/computer/index.php";
+    @Autowired
+    private WebSiteAccessConfig accessConfig;
     
     //@Value("${scraper.timeout:10}")
     private int timeout = 10;
@@ -47,7 +48,7 @@ public class SeleniumTPIOldInterfaceDashboardServiceImpl implements DashboardSer
         Map<String, String> personalData = new HashMap<>();
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(timeout));        
         try {           
-            driver.get(dashboardUrl);
+            driver.get(this.accessConfig.getUrl() + "game/dashboard.php");
 
             ((JavascriptExecutor) driver).executeScript("""
                 const style = document.createElement('style');
@@ -60,39 +61,13 @@ public class SeleniumTPIOldInterfaceDashboardServiceImpl implements DashboardSer
                 document.head.appendChild(style);
             """);
 
-            WebElement personalButton = wait.until(
-                ExpectedConditions.presenceOfElementLocated(By.cssSelector("[data-app='personnage']"))
+            WebElement characterSection = wait.until(
+                ExpectedConditions.presenceOfElementLocated(By.cssSelector("section.character-card"))
             );
 
-            JavascriptExecutor js = (JavascriptExecutor) driver;
-            js.executeScript("arguments[0].click();", personalButton);
-
-            wait.until(ExpectedConditions.attributeContains(personalButton, "class", "active"));
-
-            WebElement modal = wait.until(
-                ExpectedConditions.visibilityOfElementLocated(
-                    By.cssSelector(".os-window[data-app='personnage']")
-                )
-            );
-
-            WebElement iframe = wait.until(
-                ExpectedConditions.presenceOfNestedElementLocatedBy(
-                    modal,
-                    By.tagName("iframe")
-                )
-            );
-
-            driver.switchTo().frame(iframe);
-
-            WebElement pageContent = wait.until(
-                ExpectedConditions.visibilityOfElementLocated(
-                    By.cssSelector(".personnage-container")
-                )
-            );
-
-            personalData.put("money", getElementText(pageContent, "div.money-value"));
-            personalData.put("level", getElementText(pageContent, ".level-value"));
-            personalData.put("experience", getElementText(pageContent, ".exp-text"));
+            personalData.put("money", getElementText(characterSection, ".character-card__money-value"));
+            personalData.put("level", getElementText(characterSection, ".character-card__level-value"));
+            personalData.put("experience", getElementText(characterSection, ".character-card__exp"));
         } catch (Exception e) {
         } finally {
             if (driver != null) {
@@ -110,7 +85,7 @@ public class SeleniumTPIOldInterfaceDashboardServiceImpl implements DashboardSer
         
         try {
             driver = loginService.getDriver();
-            driver.get(dashboardUrl);
+            driver.get(this.accessConfig.getUrl() + "game/dashboard.php");
             
             WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(timeout));
             wait.until(webDriver -> 

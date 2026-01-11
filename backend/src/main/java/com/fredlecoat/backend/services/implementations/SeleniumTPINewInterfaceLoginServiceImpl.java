@@ -14,6 +14,7 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.fredlecoat.backend.configuration.WebSiteAccessConfig;
 import com.fredlecoat.backend.services.LoginService;
 
 import lombok.NoArgsConstructor;
@@ -24,14 +25,8 @@ public class SeleniumTPINewInterfaceLoginServiceImpl implements LoginService{
     @Autowired
     private ChromeOptions chromeOptions;
 
-    //@Value("${scraper.login.url}")
-    private String loginUrl = "https://themeparkindustries.com/tpiv5/play.php";
-
-    //@Value("${scraper.login.username}")
-    private String username = "danaleight2000@gmail.com";
-
-    //@Value("${scraper.login.password}")
-    private String password = "8$8L58syS@wivxka&SUeNacVr4Xe%SiC";
+    @Autowired
+    private WebSiteAccessConfig accessConfig;
 
     //@Value("${scraper.global.timeout}")
     private int timeout = 10;
@@ -46,7 +41,7 @@ public class SeleniumTPINewInterfaceLoginServiceImpl implements LoginService{
         Map<String, String> cookies = new HashMap<>();
         try {
             driver = new ChromeDriver(chromeOptions);
-            driver.get(loginUrl);
+            driver.get(accessConfig.getUrl());
             
             WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(timeout));
             
@@ -62,8 +57,8 @@ public class SeleniumTPINewInterfaceLoginServiceImpl implements LoginService{
             WebElement loginButton = driver.findElement(By.cssSelector("form#loginForm button.btn-primary"));
             
             // Remplir le formulaire
-            usernameField.sendKeys(username);
-            passwordField.sendKeys(password);
+            usernameField.sendKeys(accessConfig.getEmail());
+            passwordField.sendKeys(accessConfig.getPassword());
             loginButton.click();
             
             // Attendre la redirection après login

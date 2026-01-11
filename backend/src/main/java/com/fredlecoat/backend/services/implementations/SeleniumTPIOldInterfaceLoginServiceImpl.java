@@ -14,6 +14,7 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.fredlecoat.backend.configuration.WebSiteAccessConfig;
 import com.fredlecoat.backend.services.LoginService;
 
 import lombok.NoArgsConstructor;
@@ -23,15 +24,9 @@ public class SeleniumTPIOldInterfaceLoginServiceImpl implements LoginService{
 
     @Autowired
     private ChromeOptions chromeOptions;
-
-    //@Value("${scraper.login.url}")
-    private String loginUrl = "https://themeparkindustries.com/tpiv5/play.php";
-
-    //@Value("${scraper.login.username}")
-    private String username = "danaleight2000@gmail.com";
-
-    //@Value("${scraper.login.password}")
-    private String password = "8$8L58syS@wivxka&SUeNacVr4Xe%SiC";
+    
+    @Autowired
+    private WebSiteAccessConfig accessConfig;
 
     //@Value("${scraper.global.timeout}")
     private int timeout = 10;
@@ -46,7 +41,7 @@ public class SeleniumTPIOldInterfaceLoginServiceImpl implements LoginService{
         Map<String, String> cookies = new HashMap<>();
         try {
             driver = new ChromeDriver(chromeOptions);
-            driver.get(loginUrl);
+            driver.get(this.accessConfig.getUrl() + "play.php");
             
             WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(timeout));
             
@@ -59,15 +54,15 @@ public class SeleniumTPIOldInterfaceLoginServiceImpl implements LoginService{
                 ExpectedConditions.presenceOfElementLocated(By.id("login-email"))
             );
             WebElement passwordField = driver.findElement(By.id("login-password"));
-            WebElement loginButton = driver.findElement(By.cssSelector("form#loginForm button.btn-primary"));
+            WebElement loginButton = driver.findElement(By.cssSelector("form.auth-form button.form-submit"));
             
             // Remplir le formulaire
-            usernameField.sendKeys(username);
-            passwordField.sendKeys(password);
+            usernameField.sendKeys(this.accessConfig.getEmail());
+            passwordField.sendKeys(this.accessConfig.getPassword());
             loginButton.click();
             
             // Attendre la redirection après login
-            wait.until(ExpectedConditions.urlContains("index"));
+            wait.until(ExpectedConditions.urlContains("dashboard"));
         } catch (Exception e) {
             throw new RuntimeException("Échec de la connexion", e);
         }
