@@ -5,7 +5,6 @@ import java.time.LocalDateTime;
 import com.fredlecoat.backend.values.DashboardActivityCategory;
 import com.fredlecoat.backend.values.DashboardActivityType;
 
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -24,7 +23,6 @@ public class DashboardActivityEntity {
     @Enumerated(EnumType.STRING)
     private DashboardActivityCategory category;
 
-    @Column(columnDefinition="DATETIME")
     private LocalDateTime posted;
 
     @Enumerated(EnumType.STRING)

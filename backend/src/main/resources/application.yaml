@@ -2,9 +2,9 @@ spring:
   application:
     name: theme-park-industries-scrapper-+backend
   datasource:
-    url: jdbc:postgresql://localhost:5432/theme-park-industries
+    url: jdbc:postgresql://10.0.0.10:5432/theme-park-industries
     username: postgres
-    password: dY8PTvb19A52DR7FvYmsl701ppgFXmx4TqpIBUaSdOrCAXtmmBggCG3JZGup85tY 
+    password: dY8PTvb19A52DR7FvYmsl701ppgFXmx4TqpIBUaSdOrCAXtmmBggCG3JZGup85tY
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -13,4 +13,20 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
+        format_sql: false
+
+  scraper:
+    global:
+      url: https://themeparkindustries.com/tpiv4/
+      timeout: 10
+    login:
+      url: ${scraper.global.url}play.php
+      username: danaleight2000.jeux@gmail.com
+      password: 8$8L58syS@wivxka&SUeNacVr4Xe%SiC
+    dashboard:
+      url: ${scraper.global.url}dashboard.php
+
+web-access:
+  url: https://www.themeparkindustries.com/tpiv4/
+  email: danaleight2000.jeux@gmail.com
+  password: 8$8L58syS@wivxka&SUeNacVr4Xe%SiC

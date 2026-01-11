@@ -1,8 +1,7 @@
 package com.fredlecoat.backend.services;
 
-import java.util.Map;
+import org.openqa.selenium.WebDriver;
 
 public interface LoginService {
-    boolean isLogged();
-    Map<String, String> login(String username, String password);
+    WebDriver getDriver();
 }
