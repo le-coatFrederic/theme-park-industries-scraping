@@ -1,5 +1,6 @@
 package com.fredlecoat.backend.entities;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 import jakarta.annotation.PostConstruct;
@@ -11,6 +12,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -32,9 +34,9 @@ public class PlayerDataEntity {
 
     private int experience;
 
-    private LocalDateTime createdOn;
+    private Instant createdOn;
 
-    @ManyToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "player_id")
     private PlayerEntity player;
 
@@ -44,8 +46,8 @@ public class PlayerDataEntity {
         this.experience = experience;
     }
 
-    @PostConstruct
+    @PrePersist
     private void createdOn() {
-        this.createdOn = LocalDateTime.now();
+        this.createdOn = Instant.now();
     }
 }

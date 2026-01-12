@@ -1,4 +1,4 @@
-package com.fredlecoat.backend.services.implementations;
+package com.fredlecoat.backend.services.impl;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -18,6 +18,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import com.fredlecoat.backend.configuration.WebSiteAccessConfig;
 import com.fredlecoat.backend.entities.DashboardActivityEntity;
+import com.fredlecoat.backend.entities.dtos.DashboardActivityTextScrapedDtoRequest;
+import com.fredlecoat.backend.entities.mappers.DashboardActivityMapper;
 import com.fredlecoat.backend.services.DashboardService;
 import com.fredlecoat.backend.services.LoginService;
 
@@ -33,6 +35,9 @@ public class SeleniumTPIOldInterfaceDashboardServiceImpl implements DashboardSer
     
     @Autowired
     private WebSiteAccessConfig accessConfig;
+
+    @Autowired
+    private DashboardActivityMapper mapper;
     
     //@Value("${scraper.timeout:10}")
     private int timeout = 10;
@@ -80,42 +85,37 @@ public class SeleniumTPIOldInterfaceDashboardServiceImpl implements DashboardSer
     
     @Override
     public List<DashboardActivityEntity> getDashboardActivities() {
-        WebDriver driver = null;
         List<DashboardActivityEntity> activities = new ArrayList<>();
         
-        try {
-            driver = loginService.getDriver();
+        WebDriver driver = loginService.getDriver();
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(timeout));        
+        try {           
             driver.get(this.accessConfig.getUrl() + "game/dashboard.php");
-            
-            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(timeout));
-            wait.until(webDriver -> 
-                ((JavascriptExecutor) webDriver).executeScript("return document.readyState").equals("complete")
+
+            ((JavascriptExecutor) driver).executeScript("""
+                const style = document.createElement('style');
+                style.innerHTML = `
+                    * {
+                        transition: none !important;
+                        animation: none !important;
+                    }
+                `;
+                document.head.appendChild(style);
+            """);
+
+            WebElement newsSection = wait.until(
+                ExpectedConditions.presenceOfElementLocated(By.cssSelector("div.news-journal__content"))
             );
-            
-            // TODO: Adapter ce sélecteur à votre site
-            List<WebElement> activityElements = wait.until(
-                ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector(".activity-item"))
-            );
-            
-            for (WebElement element : activityElements) {
-                try {
-                    /*DashboardActivityEntity activity = new DashboardActivityEntity();
-                    
-                    // Extraire les données de chaque activité
-                    activity.setActivityType(element.findElement(By.cssSelector(".activity-type")).getText());
-                    activity.setDescription(element.findElement(By.cssSelector(".activity-description")).getText());
-                    activity.setStatus(element.findElement(By.cssSelector(".activity-status")).getText());*/
-                    
-                    // Parser la date (adapter le format selon votre site)
-                    String dateText = element.findElement(By.cssSelector(".activity-date")).getText();
-                    // activity.setActivityDate(parseDate(dateText));
-                    
-                    //activities.add(activity);
-                } catch (NoSuchElementException e) {
-                }
+
+            for(WebElement news: newsSection.findElements(By.cssSelector("div.news-journal__item"))) {
+                DashboardActivityTextScrapedDtoRequest dto = new DashboardActivityTextScrapedDtoRequest(
+                    getElementText(newsSection, ".news-journal__badge"),
+                    getElementText(newsSection, ".news-journal__date"),
+                    getElementText(newsSection, ".news-journal__text")
+                );
+
+                activities.add(mapper.toEntity(dto));
             }
-            
-            
         } catch (Exception e) {
         } finally {
             if (driver != null) {

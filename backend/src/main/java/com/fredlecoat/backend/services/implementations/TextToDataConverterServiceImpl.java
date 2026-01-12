@@ -40,7 +40,7 @@ public class TextToDataConverterServiceImpl implements TextToDataConverterServic
         int separatorIndex = experienceText.indexOf('/');
         return experienceText
                 .trim()
-                .substring(0, separatorIndex)
+                .substring(1, separatorIndex)
                 .replace(" ", "");
     }
 

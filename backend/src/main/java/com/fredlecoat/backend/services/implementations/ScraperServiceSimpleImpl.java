@@ -5,7 +5,7 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.fredlecoat.backend.entities.requests.MainPlayerRequest;
+import com.fredlecoat.backend.entities.dtos.MainPlayerRequest;
 import com.fredlecoat.backend.services.DashboardService;
 import com.fredlecoat.backend.services.PlayerService;
 import com.fredlecoat.backend.services.ScraperService;

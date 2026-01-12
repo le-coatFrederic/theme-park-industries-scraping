@@ -1,7 +1,5 @@
 package com.fredlecoat.backend.services.implementations;
 
-import java.util.List;
-
 import org.springframework.stereotype.Service;
 
 import com.fredlecoat.backend.entities.PlayerDataEntity;
@@ -39,18 +37,12 @@ public class PlayerServiceImpl implements PlayerService {
             return null;
         }
 
-        List<PlayerEntity> players = this.playerRepository.findByName(request.name());
-        PlayerEntity entity = players.isEmpty() ? null : players.getFirst();
-
-        if (entity != null) {
-            PlayerDataEntity playerDataEntity = this.playerDataMapper.toEntity(request);
-            playerDataEntity.setPlayer(entity);
-            this.playerDataRepository.save(playerDataEntity);
-        } else {
-            entity = this.playerMapper.toEntity(request);
-        }
+        PlayerEntity entity = this.playerRepository.findFirstByName(request.name()).orElse(this.playerMapper.toEntity(request));
+        PlayerDataEntity playerDataEntity = this.playerDataMapper.toEntity(request);
 
         entity = this.playerRepository.save(entity);
+        playerDataEntity.setPlayer(entity);
+        this.playerDataRepository.save(playerDataEntity);
         return entity;
     }
 

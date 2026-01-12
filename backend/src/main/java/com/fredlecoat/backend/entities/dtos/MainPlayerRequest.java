@@ -1,4 +1,4 @@
-package com.fredlecoat.backend.entities.requests;
+package com.fredlecoat.backend.entities.dtos;
 
 public record MainPlayerRequest(
     String name,

@@ -13,11 +13,15 @@ import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Setter;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 public class ParkEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
