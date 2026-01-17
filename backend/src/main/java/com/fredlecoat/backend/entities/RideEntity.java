@@ -14,11 +14,15 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToMany;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 public class RideEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -31,8 +35,9 @@ public class RideEntity {
 
     private int hype;
 
-    @Enumerated(EnumType.STRING)
-    private RideBrand brand;
+    private String name;
+
+    private String brand;
 
     private Long price;
 
@@ -47,7 +52,8 @@ public class RideEntity {
         RideType type,
         int maxCapacityByHour,
         int hype,
-        RideBrand brand,
+        String name,
+        String brand,
         Long price,
         Long surface,
         int height
@@ -55,11 +61,16 @@ public class RideEntity {
         this.type = type;
         this.maxCapacityByHour = maxCapacityByHour;
         this.hype = hype;
+        this.name = name;
         this.brand = brand;
         this.price = price;
         this.surface = surface;
         this.height = height;
 
         this.parks = new HashSet<>();
+    }
+
+    public void addPark(ParkEntity park) {
+        this.parks.add(park);
     }
 }

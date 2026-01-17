@@ -5,4 +5,5 @@ import com.fredlecoat.backend.entities.dtos.MainPlayerRequest;
 
 public interface PlayerService {
     PlayerEntity saveMainPlayer(MainPlayerRequest request);
+    PlayerEntity findByName(String name);
 }

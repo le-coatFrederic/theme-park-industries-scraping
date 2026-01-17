@@ -13,7 +13,7 @@ import com.fredlecoat.backend.values.DashboardActivityType;
 public class BuyLandParser implements NewsParser {
 
     private static final Pattern PATTERN = Pattern.compile(
-        "(.+?) viens d'acheter (\\d+)m² de terrain à (.+?) pour",
+        "(.+?) viens d'acheter ([\\d ]+)m² de terrain à (.+?) pour un agrandissement.",
         Pattern.CASE_INSENSITIVE
     );
 
@@ -26,11 +26,15 @@ public class BuyLandParser implements NewsParser {
     public ParsedNews parse(String text) {
         Matcher matcher = PATTERN.matcher(text);
         matcher.matches();
+        // Remove spaces from quantity (e.g., "2 300" -> "2300")
+        String quantityStr = matcher.group(2).replaceAll("\\s+", "");
         return new ParsedNews(
-            matcher.group(1),
-            matcher.group(3),
-            Integer.parseInt(matcher.group(2)),
             null,
+            matcher.group(3),
+            matcher.group(1),
+            null,
+            null,
+            Integer.parseInt(quantityStr),
             DashboardActivityType.BUYING_LAND
         );
     }

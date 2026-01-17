@@ -10,10 +10,10 @@ import com.fredlecoat.backend.parsers.NewsParser;
 import com.fredlecoat.backend.values.DashboardActivityType;
 
 @Component
-public class BuyRideParser implements NewsParser {
+public class BuyRideFromPlayer implements NewsParser {
 
     private static final Pattern PATTERN = Pattern.compile(
-    "(.+?) à (.+?) viens d'annoncer l'arrivée d'un (.+)\\.",
+    "(.+?) vient d'acheter un (.+?) à (.+?).",
     Pattern.CASE_INSENSITIVE
 );
 
@@ -28,12 +28,12 @@ public class BuyRideParser implements NewsParser {
         matcher.matches();
         return new ParsedNews(
             null,
-            matcher.group(2),
+            null,
             matcher.group(1),
-            null,
             matcher.group(3),
+            matcher.group(2),
             null,
-            DashboardActivityType.BUYING_RIDE
+            DashboardActivityType.BUYING_RIDE_FROM_OTHER
         );
     }
 

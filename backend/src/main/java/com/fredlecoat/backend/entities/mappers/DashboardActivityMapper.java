@@ -23,7 +23,13 @@ public class DashboardActivityMapper {
             this.categoryTranslate(dto.category()),
             this.dateTimeTranslator(dto.date()),
             this.activityTypeTranslator(dto.event()),
-            dto.event()
+            dto.event(),
+            null,
+            null,
+            null,
+            null,
+            null,
+            null
         );
     }
 

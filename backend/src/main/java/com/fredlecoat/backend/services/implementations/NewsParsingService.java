@@ -1,4 +1,4 @@
-package com.fredlecoat.backend.services.impl;
+package com.fredlecoat.backend.services.implementations;
 
 import java.util.List;
 
@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import com.fredlecoat.backend.entities.dtos.ParsedNews;
 import com.fredlecoat.backend.parsers.NewsParser;
+import com.fredlecoat.backend.values.DashboardActivityType;
 
 @Service
 public class NewsParsingService {
@@ -18,7 +19,15 @@ public class NewsParsingService {
         return parsers.stream()
             .filter(p -> p.isMatching(text))
             .findFirst()
-            .orElseThrow(() -> new IllegalArgumentException("Format inconnu : " + text))
-            .parse(text);
+            .map(parser -> parser.parse(text))
+            .orElseGet(() -> createDefaultParsedNews(text));
+    }
+
+    /**
+     * Creates a default ParsedNews when no parser matches the text
+     */
+    private ParsedNews createDefaultParsedNews(String text) {
+        System.out.println("No matching parser found for text: " + text);
+        return new ParsedNews(null, null, null, null, null, null, DashboardActivityType.NONE);
     }
 }

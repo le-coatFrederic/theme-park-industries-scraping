@@ -1,4 +1,4 @@
-package com.fredlecoat.backend.services.impl;
+package com.fredlecoat.backend.services.implementations;
 
 import java.time.Duration;
 import java.util.ArrayList;

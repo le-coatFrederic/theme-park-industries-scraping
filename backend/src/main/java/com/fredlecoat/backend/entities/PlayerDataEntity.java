@@ -1,10 +1,7 @@
 package com.fredlecoat.backend.entities;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 
-import jakarta.annotation.PostConstruct;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;

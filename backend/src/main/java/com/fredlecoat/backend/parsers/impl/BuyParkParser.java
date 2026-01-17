@@ -10,12 +10,12 @@ import com.fredlecoat.backend.parsers.NewsParser;
 import com.fredlecoat.backend.values.DashboardActivityType;
 
 @Component
-public class BuyRideParser implements NewsParser {
+public class BuyParkParser implements NewsParser {
 
     private static final Pattern PATTERN = Pattern.compile(
-    "(.+?) à (.+?) viens d'annoncer l'arrivée d'un (.+)\\.",
-    Pattern.CASE_INSENSITIVE
-);
+        "(.+?) vient d'acquérir des terrains pour implanter (.+?) à (.+?).",
+        Pattern.CASE_INSENSITIVE
+    );
 
     @Override
     public boolean isMatching(String text) {
@@ -27,13 +27,13 @@ public class BuyRideParser implements NewsParser {
         Matcher matcher = PATTERN.matcher(text);
         matcher.matches();
         return new ParsedNews(
-            null,
-            matcher.group(2),
             matcher.group(1),
-            null,
             matcher.group(3),
+            matcher.group(2),
             null,
-            DashboardActivityType.BUYING_RIDE
+            null,
+            null,
+            DashboardActivityType.BUYING_PARK
         );
     }
 

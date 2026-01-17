@@ -17,33 +17,26 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.fredlecoat.backend.entities.DashboardActivityEntity;
+import com.fredlecoat.backend.services.DashboardActivityService;
 import com.fredlecoat.backend.services.DashboardService;
 import com.fredlecoat.backend.services.LoginService;
 
-import lombok.NoArgsConstructor;
-
-@NoArgsConstructor
 public class SeleniumTPINewInterfaceDashboardServiceImpl implements DashboardService{
-    @Autowired
-    private ChromeOptions chromeOptions;
 
     @Autowired
     private LoginService loginService;
+
+    @Autowired
+    private DashboardActivityService dashboardActivityService;
     
-    //@Value("${scraper.dashboard.url}")
-    private String dashboardUrl = "https://themeparkindustries.com/tpiv5/computer/index.php";
+    private String dashboardUrl = "https://themeparkindustries.com/tpiv4/game/monbureau.php";
     
-    //@Value("${scraper.timeout:10}")
     private int timeout = 10;
-    
-    public SeleniumTPINewInterfaceDashboardServiceImpl(ChromeOptions chromeOptions, LoginService loginService) {
-        this.chromeOptions = chromeOptions;
-        this.loginService = loginService;
-    }
+
+    private WebDriver driver;
     
     @Override
     public Map<String, String> getPersonalData() {
-        WebDriver driver = loginService.getDriver();
         Map<String, String> personalData = new HashMap<>();
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(timeout));        
         try {           
@@ -105,43 +98,41 @@ public class SeleniumTPINewInterfaceDashboardServiceImpl implements DashboardSer
     
     @Override
     public List<DashboardActivityEntity> getDashboardActivities() {
-        WebDriver driver = null;
         List<DashboardActivityEntity> activities = new ArrayList<>();
         
         try {
             driver = loginService.getDriver();
             driver.get(dashboardUrl);
+
+            System.out.println("ON A EU LA PAGE DASHBOARD");
             
             WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(timeout));
             wait.until(webDriver -> 
                 ((JavascriptExecutor) webDriver).executeScript("return document.readyState").equals("complete")
             );
             
-            // TODO: Adapter ce sélecteur à votre site
             List<WebElement> activityElements = wait.until(
-                ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector(".activity-item"))
+                ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector(".news-journal__item"))
             );
-            
-            for (WebElement element : activityElements) {
+
+            System.out.println("Nombre d'activités trouvées: " + activityElements.size());
+
+            for (int i = 0; i < activityElements.size(); i++) {
                 try {
-                    /*DashboardActivityEntity activity = new DashboardActivityEntity();
-                    
-                    // Extraire les données de chaque activité
-                    activity.setActivityType(element.findElement(By.cssSelector(".activity-type")).getText());
-                    activity.setDescription(element.findElement(By.cssSelector(".activity-description")).getText());
-                    activity.setStatus(element.findElement(By.cssSelector(".activity-status")).getText());*/
-                    
-                    // Parser la date (adapter le format selon votre site)
-                    String dateText = element.findElement(By.cssSelector(".activity-date")).getText();
-                    // activity.setActivityDate(parseDate(dateText));
-                    
-                    //activities.add(activity);
-                } catch (NoSuchElementException e) {
+                    WebElement element = activityElements.get(i);
+                    DashboardActivityEntity activity = this.dashboardActivityService.create(element);
+                    activities.add(activity);
+                    System.out.println("Activité " + (i + 1) + " créée avec succès");
+                } catch (Exception e) {
+                    System.err.println("Erreur lors de la création de l'activité " + (i + 1) + ": " + e.getMessage());
+                    e.printStackTrace();
+                    // Continue to next element instead of breaking
                 }
             }
-            
-            
+
         } catch (Exception e) {
+            System.err.println("Erreur lors de la récupération des activités du dashboard: " + e.getMessage());
+            e.printStackTrace();
         } finally {
             if (driver != null) {
                 driver.quit();

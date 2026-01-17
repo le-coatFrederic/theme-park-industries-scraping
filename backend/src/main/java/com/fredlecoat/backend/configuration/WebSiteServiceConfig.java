@@ -6,8 +6,8 @@ import org.springframework.context.annotation.Configuration;
 
 import com.fredlecoat.backend.services.DashboardService;
 import com.fredlecoat.backend.services.LoginService;
-import com.fredlecoat.backend.services.implementations.SeleniumTPIOldInterfaceDashboardServiceImpl;
-import com.fredlecoat.backend.services.implementations.SeleniumTPIOldInterfaceLoginServiceImpl;
+import com.fredlecoat.backend.services.implementations.SeleniumTPINewInterfaceDashboardServiceImpl;
+import com.fredlecoat.backend.services.implementations.SeleniumTPINewInterfaceLoginServiceImpl;
 
 @Configuration
 public class WebSiteServiceConfig {
@@ -18,12 +18,12 @@ public class WebSiteServiceConfig {
     @Bean
     public LoginService loginService() {
         accessConfig.checkAttributes();
-        return new SeleniumTPIOldInterfaceLoginServiceImpl();
+        return new SeleniumTPINewInterfaceLoginServiceImpl();
     }
 
     @Bean
     public DashboardService dashboardService() {
         accessConfig.checkAttributes();
-        return new SeleniumTPIOldInterfaceDashboardServiceImpl();
+        return new SeleniumTPINewInterfaceDashboardServiceImpl();
     }
 }

@@ -13,13 +13,13 @@ public class RequestScheduler {
 
     @Scheduled(fixedRate = 1000 * 60 * 30) // 30 minutes
     public void mediumScheduler() {
-        System.out.println("########## PERSONAL DATA ##########");
-        this.scraperService.getPersonalData();
+        //System.out.println("########## PERSONAL DATA ##########");
+        //this.scraperService.getPersonalData();
     }
 
     @Scheduled(fixedRate = 1000 * 60) // 1 minute
     public void lowScheduler() {
-        System.out.println("########## PERSONAL DATA ##########");
+        //System.out.println("########## PERSONAL DATA ##########");
         this.scraperService.getDashboardActivities();
     }
 }

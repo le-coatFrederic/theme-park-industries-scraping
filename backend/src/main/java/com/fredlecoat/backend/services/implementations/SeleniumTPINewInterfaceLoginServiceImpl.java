@@ -31,17 +31,18 @@ public class SeleniumTPINewInterfaceLoginServiceImpl implements LoginService{
     //@Value("${scraper.global.timeout}")
     private int timeout = 10;
 
-    public SeleniumTPINewInterfaceLoginServiceImpl(ChromeOptions chromeOptions) {
-        this.chromeOptions = chromeOptions;
-    }
-
     @Override
     public WebDriver getDriver() {
+
+        System.out.println("DEBUT TENTATIVE CONNEXION");
+
         WebDriver driver = null;
         Map<String, String> cookies = new HashMap<>();
         try {
             driver = new ChromeDriver(chromeOptions);
-            driver.get(accessConfig.getUrl());
+            driver.get(this.accessConfig.getUrl() + "play.php");
+
+            System.out.println("ACCES A LA PAGE " + this.accessConfig.getUrl() + "play.php");
             
             WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(timeout));
             
@@ -49,20 +50,28 @@ public class SeleniumTPINewInterfaceLoginServiceImpl implements LoginService{
             wait.until(webDriver -> 
                 ((JavascriptExecutor) webDriver).executeScript("return document.readyState").equals("complete")
             );
+
+            System.out.println("TROUVER LE FORMULAIRE DE CONNEXION");
             
             WebElement usernameField = wait.until(
                 ExpectedConditions.presenceOfElementLocated(By.id("login-email"))
             );
             WebElement passwordField = driver.findElement(By.id("login-password"));
-            WebElement loginButton = driver.findElement(By.cssSelector("form#loginForm button.btn-primary"));
+            WebElement loginButton = driver.findElement(By.cssSelector("form.auth-form button.form-submit"));
+
+            System.out.println("FORMULAIRE TROUVE, COMPOSANTS ENREGISTRES");
             
             // Remplir le formulaire
-            usernameField.sendKeys(accessConfig.getEmail());
-            passwordField.sendKeys(accessConfig.getPassword());
+            usernameField.sendKeys(this.accessConfig.getEmail());
+            passwordField.sendKeys(this.accessConfig.getPassword());
             loginButton.click();
+
+            System.out.println("ENVOI DU FORMULAIRE DE CONNEXION");
             
             // Attendre la redirection après login
-            wait.until(ExpectedConditions.urlContains("index"));
+            wait.until(ExpectedConditions.urlContains("dashboard"));
+
+            System.out.println("CONNEXION REUSSIE");
         } catch (Exception e) {
             throw new RuntimeException("Échec de la connexion", e);
         }

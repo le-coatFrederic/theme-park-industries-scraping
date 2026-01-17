@@ -7,5 +7,5 @@ import com.fredlecoat.backend.entities.RideEntity;
 
 @Repository
 public interface RideRepository extends JpaRepository<RideEntity, Long>{
-
+    RideEntity findByNameAndBrand(String name, String brand);
 }

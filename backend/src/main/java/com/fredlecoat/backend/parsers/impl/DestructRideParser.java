@@ -10,10 +10,10 @@ import com.fredlecoat.backend.parsers.NewsParser;
 import com.fredlecoat.backend.values.DashboardActivityType;
 
 @Component
-public class BuyRideParser implements NewsParser {
+public class DestructRideParser implements NewsParser {
 
     private static final Pattern PATTERN = Pattern.compile(
-    "(.+?) à (.+?) viens d'annoncer l'arrivée d'un (.+)\\.",
+    "(.+?) à (.+?) vient d'annoncer la destruction de (.+?).",
     Pattern.CASE_INSENSITIVE
 );
 
@@ -33,7 +33,7 @@ public class BuyRideParser implements NewsParser {
             null,
             matcher.group(3),
             null,
-            DashboardActivityType.BUYING_RIDE
+            DashboardActivityType.DESTRUCT_RIDE
         );
     }
 

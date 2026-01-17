@@ -46,8 +46,7 @@ public class ScraperServiceSimpleImpl implements ScraperService {
 
     @Override
     public void getDashboardActivities() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getDashboardActivities'");
+        this.dashboardService.getDashboardActivities();
     }
 
 }

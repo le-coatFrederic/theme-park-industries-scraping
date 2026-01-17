@@ -12,7 +12,6 @@ import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.Setter;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -55,5 +54,10 @@ public class ParkEntity {
         this.city = city;
 
         this.rides = new HashSet<>();
+    }
+
+    public void addRide(RideEntity ride) {
+        this.rides.add(ride);
+        ride.addPark(this);
     }
 }

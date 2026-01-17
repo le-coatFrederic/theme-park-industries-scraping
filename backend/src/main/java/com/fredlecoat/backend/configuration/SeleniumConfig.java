@@ -1,17 +1,18 @@
 package com.fredlecoat.backend.configuration;
 
+import io.github.bonigarcia.wdm.WebDriverManager;
 import org.openqa.selenium.chrome.ChromeOptions;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class SeleniumConfig {
-    
+
     @Bean
     public ChromeOptions chromeOptions() {
-        // Pas besoin de WebDriverManager.chromedriver().setup()
-        // Selenium Manager gère automatiquement le driver
-        
+        // Setup ChromeDriver using WebDriverManager
+        WebDriverManager.chromedriver().setup();
+
         ChromeOptions options = new ChromeOptions();
         options.addArguments("--headless=new"); // Nouveau mode headless
         options.addArguments("--no-sandbox");

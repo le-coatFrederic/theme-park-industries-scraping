@@ -40,9 +40,14 @@ public class SeleniumTPIOldInterfaceLoginServiceImpl implements LoginService{
         WebDriver driver = null;
         Map<String, String> cookies = new HashMap<>();
         try {
+            System.out.println("Initializing ChromeDriver...");
             driver = new ChromeDriver(chromeOptions);
-            driver.get(this.accessConfig.getUrl() + "play.php");
-            
+
+            String targetUrl = this.accessConfig.getUrl() + "play.php";
+            System.out.println("Navigating to: " + targetUrl);
+            driver.get(targetUrl);
+            System.out.println("ACCES A LA PAGE " + targetUrl);
+
             WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(timeout));
             
             // Attendre que la page soit chargée

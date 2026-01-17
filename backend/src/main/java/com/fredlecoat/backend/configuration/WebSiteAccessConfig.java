@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class WebSiteAccessConfig {
-   
+
     private String url;
     private String email;
     private String password;

@@ -1,19 +1,22 @@
 services:
   backend:
-    container-name: tpi-scraper-backend
+    container_name: tpi-scraper-backend
     build:
       context: ./backend
       dockerfile: Dockerfile
     restart: unless-stopped
     environment:
       SPRING_DATASOURCE_URL: ${URL_POSTGRES}
-      SPRING_DATASOURCE_USERNAME: ${USER_ERP_FREELANCE}
+      SPRING_DATASOURCE_USERNAME: ${USER_POSTGRESQL}
       SPRING_DATASOURCE_PASSWORD: ${PASSWORD_POSTGRESQL}
+      WEBACCESS_URL: ${URL_TPI}
+      WEBACCESS_EMAIL: ${USER_TPI}
+      WEBACCESS_PASSWORD: ${PASSWORD_TPI}
     networks:
       - tpi-scraping-network
 
 networks:
-  erp-freelance-network:
+  tpi-scraping-network:
     name: tpi-scraping-network
     driver: bridge
 

@@ -3,10 +3,12 @@ package com.fredlecoat.backend.entities.dtos;
 import com.fredlecoat.backend.values.DashboardActivityType;
 
 public record ParsedNews(
-    String parkName,
+    String playerName,
     String cityName,
-    Integer amount,
+    String actorParkName,
+    String victimParkName,
     String rideName,
+    Integer amount,
     DashboardActivityType type
 ) {
 }

@@ -7,5 +7,5 @@ import com.fredlecoat.backend.entities.CityEntity;
 
 @Repository
 public interface CityRepository extends JpaRepository<CityEntity, Long> {
-
+    CityEntity findByName(String name);
 }
