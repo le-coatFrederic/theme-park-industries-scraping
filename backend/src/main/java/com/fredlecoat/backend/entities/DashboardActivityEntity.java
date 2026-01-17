@@ -6,7 +6,6 @@ import java.time.LocalDateTime;
 import com.fredlecoat.backend.values.DashboardActivityCategory;
 import com.fredlecoat.backend.values.DashboardActivityType;
 
-import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -41,23 +40,23 @@ public class DashboardActivityEntity {
 
     private String text;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "player_id", nullable = true)
     private PlayerEntity player;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "city_id", nullable = true)
     private CityEntity city;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "actor_park_id", nullable = true)
     private ParkEntity actorPark;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "victim_park_id", nullable = true)
     private ParkEntity victimPark;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ride_id", nullable = true)
     private RideEntity ride;
 

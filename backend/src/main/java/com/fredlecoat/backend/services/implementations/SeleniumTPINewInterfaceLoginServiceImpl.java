@@ -1,15 +1,11 @@
 package com.fredlecoat.backend.services.implementations;
 
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,10 +19,10 @@ import lombok.NoArgsConstructor;
 public class SeleniumTPINewInterfaceLoginServiceImpl implements LoginService{
 
     @Autowired
-    private ChromeOptions chromeOptions;
+    private WebSiteAccessConfig accessConfig;
 
     @Autowired
-    private WebSiteAccessConfig accessConfig;
+    private WebDriver driver;
 
     //@Value("${scraper.global.timeout}")
     private int timeout = 10;
@@ -36,10 +32,7 @@ public class SeleniumTPINewInterfaceLoginServiceImpl implements LoginService{
 
         System.out.println("DEBUT TENTATIVE CONNEXION");
 
-        WebDriver driver = null;
-        Map<String, String> cookies = new HashMap<>();
         try {
-            driver = new ChromeDriver(chromeOptions);
             driver.get(this.accessConfig.getUrl() + "play.php");
 
             System.out.println("ACCES A LA PAGE " + this.accessConfig.getUrl() + "play.php");

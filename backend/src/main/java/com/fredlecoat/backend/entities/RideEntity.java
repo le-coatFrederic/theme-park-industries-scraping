@@ -3,7 +3,6 @@ package com.fredlecoat.backend.entities;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.fredlecoat.backend.values.RideBrand;
 import com.fredlecoat.backend.values.RideType;
 
 import jakarta.persistence.Entity;

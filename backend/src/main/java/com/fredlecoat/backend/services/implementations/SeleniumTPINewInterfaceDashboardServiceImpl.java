@@ -11,7 +11,6 @@ import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -87,10 +86,7 @@ public class SeleniumTPINewInterfaceDashboardServiceImpl implements DashboardSer
             personalData.put("level", getElementText(pageContent, ".level-value"));
             personalData.put("experience", getElementText(pageContent, ".exp-text"));
         } catch (Exception e) {
-        } finally {
-            if (driver != null) {
-                driver.quit();
-            }
+            e.printStackTrace();
         }
         
         return personalData;
@@ -133,10 +129,6 @@ public class SeleniumTPINewInterfaceDashboardServiceImpl implements DashboardSer
         } catch (Exception e) {
             System.err.println("Erreur lors de la récupération des activités du dashboard: " + e.getMessage());
             e.printStackTrace();
-        } finally {
-            if (driver != null) {
-                driver.quit();
-            }
         }
         
         return activities;

@@ -19,19 +19,11 @@ public class WebSiteAccessConfig {
     private String password;
 
     public void checkAttributes() {
-        if (url == null || url.isEmpty()) {
-            throw new RuntimeException();
-        } 
-
-        if (email == null || email.isEmpty()) {
-            throw new RuntimeException();
-        } 
-
-        if (password == null || password.isEmpty()) {
-            throw new RuntimeException();
-        } 
-        
-        System.out.println("URL : " + url + "\nEmail : " + email + "\nPassword : " + password);
+        if (url == null || email == null || password == null) {
+            throw new IllegalStateException(
+                "WebSiteAccessConfig requires url, email, and password properties"
+            );
+        }   
     }
 
 }
