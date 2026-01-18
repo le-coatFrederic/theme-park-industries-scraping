@@ -9,6 +9,7 @@ import com.fredlecoat.backend.entities.dtos.MainPlayerRequest;
 import com.fredlecoat.backend.services.DashboardService;
 import com.fredlecoat.backend.services.PlayerService;
 import com.fredlecoat.backend.services.ScraperService;
+import com.fredlecoat.backend.services.TPIDataService;
 
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
@@ -23,6 +24,9 @@ public class ScraperServiceSimpleImpl implements ScraperService {
 
     @Autowired
     private DashboardService dashboardService;
+
+    @Autowired
+    private TPIDataService tpiDataService;
 
     @Autowired
     private PlayerService playerService;
@@ -47,6 +51,13 @@ public class ScraperServiceSimpleImpl implements ScraperService {
     @Override
     public void getDashboardActivities() {
         this.dashboardService.getDashboardActivities();
+    }
+
+    @Override
+    public void getAllTPIStaticData() {
+        this.tpiDataService.getAllRidesData();
+        this.tpiDataService.getAllCitiesData();
+        this.tpiDataService.getAllParksData();
     }
 
 }

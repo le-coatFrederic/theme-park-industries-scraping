@@ -11,6 +11,11 @@ public class RequestScheduler {
     @Autowired
     private ScraperService scraperService;
 
+    @Scheduled(fixedRate = 1000 * 3600 * 24) // 24 heures
+    public void longScheduler() {
+        this.scraperService.getAllTPIStaticData();
+    }
+
     @Scheduled(fixedRate = 1000 * 60 * 30) // 30 minutes
     public void mediumScheduler() {
         //System.out.println("########## PERSONAL DATA ##########");

@@ -21,6 +21,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libnss3 \
     lsb-release \
     xdg-utils \
+    libxss1 \
+    libnss3-tools \
+    libx11-6 \
+    libx11-xcb1 \
+    libxcb1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Google Chrome
