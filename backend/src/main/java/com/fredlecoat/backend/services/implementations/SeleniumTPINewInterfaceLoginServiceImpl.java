@@ -6,6 +6,8 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import com.fredlecoat.backend.configuration.WebSiteAccessConfig;
 import com.fredlecoat.backend.services.LoginService;
 
+import io.github.bonigarcia.wdm.WebDriverManager;
 import lombok.NoArgsConstructor;
 
 @NoArgsConstructor
@@ -22,6 +25,8 @@ public class SeleniumTPINewInterfaceLoginServiceImpl implements LoginService{
     private WebSiteAccessConfig accessConfig;
 
     @Autowired
+    private ChromeOptions chromeOptions;
+
     private WebDriver driver;
 
     //@Value("${scraper.global.timeout}")
@@ -30,7 +35,13 @@ public class SeleniumTPINewInterfaceLoginServiceImpl implements LoginService{
     @Override
     public WebDriver getDriver() {
 
+        if (this.driver != null) {
+            return this.driver;
+        }
+
         System.out.println("DEBUT TENTATIVE CONNEXION");
+        WebDriverManager.chromedriver().setup();
+        this.driver = new ChromeDriver(this.chromeOptions);
 
         try {
             driver.get(this.accessConfig.getUrl() + "play.php");
@@ -60,9 +71,6 @@ public class SeleniumTPINewInterfaceLoginServiceImpl implements LoginService{
             loginButton.click();
 
             System.out.println("ENVOI DU FORMULAIRE DE CONNEXION");
-            
-            // Attendre la redirection après login
-            wait.until(ExpectedConditions.urlContains("dashboard"));
 
             System.out.println("CONNEXION REUSSIE");
         } catch (Exception e) {

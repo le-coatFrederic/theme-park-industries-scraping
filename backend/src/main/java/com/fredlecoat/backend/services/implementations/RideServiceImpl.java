@@ -35,6 +35,11 @@ public class RideServiceImpl implements RideService {
             return null;
         }
 
+        RideEntity foundEntity = this.rideRepository.findByNameAndBrand(entity.getName(), entity.getBrand());
+        if (foundEntity != null) {
+            return foundEntity;
+        }
+
         return this.rideRepository.save(entity);
     }
 
@@ -71,8 +76,7 @@ public class RideServiceImpl implements RideService {
                 ride[0],  // name
                 ride[1],  // brand
                 null,  // price
-                null,  // surface
-                0      // height
+                null  // surface
             );
             return this.rideRepository.save(newRide);
         } catch (Exception e) {

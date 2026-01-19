@@ -12,6 +12,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -22,6 +23,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @Getter
 @Setter
+@Table(name = "ride")
 public class RideEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -42,8 +44,6 @@ public class RideEntity {
 
     private Long surface;
 
-    private int height;
-
     @ManyToMany(mappedBy = "rides")
     private Set<ParkEntity> parks;
 
@@ -54,8 +54,7 @@ public class RideEntity {
         String name,
         String brand,
         Long price,
-        Long surface,
-        int height
+        Long surface
     ) {
         this.type = type;
         this.maxCapacityByHour = maxCapacityByHour;
@@ -64,7 +63,6 @@ public class RideEntity {
         this.brand = brand;
         this.price = price;
         this.surface = surface;
-        this.height = height;
 
         this.parks = new HashSet<>();
     }
