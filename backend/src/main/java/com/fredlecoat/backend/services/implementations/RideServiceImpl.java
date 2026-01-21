@@ -78,23 +78,7 @@ public class RideServiceImpl implements RideService {
                 ride[0] = merged;
             }
 
-            RideEntity foundEntity = this.rideRepository.findByNameAndBrand(ride[0], ride[1]);
-            if (foundEntity != null) {
-                return foundEntity;
-            }
-
-            // Create and save new ride if not found
-            RideEntity newRide = new RideEntity(
-                null,  // type
-                0,     // maxCapacityByHour
-                0,     // hype
-                ride[0],  // name
-                ride[1],  // brand
-                null,  // price
-                null,  // surface
-                null   // imageUrl
-            );
-            return this.rideRepository.save(newRide);
+            return this.rideRepository.findByNameAndBrand(ride[0], ride[1]);
         } catch (Exception e) {
             System.err.println("Error parsing ride name: " + name + " - " + e.getMessage());
             return null;

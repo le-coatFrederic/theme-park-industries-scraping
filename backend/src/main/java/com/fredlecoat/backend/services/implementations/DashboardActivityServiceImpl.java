@@ -62,8 +62,6 @@ public class DashboardActivityServiceImpl implements DashboardActivityService {
             ParsedNews parsedNews = parsingService.parse(text);
             DashboardActivityType type = parsedNews.type();
 
-            this.parkService.handleParser(parsedNews);
-
             var existingActivity = this.repository.findByPostedAndTypeAndCategoryAndText(date, type, category, text);
             if (existingActivity.isPresent()) {
                 System.out.println("Activity already exists: " + text.substring(0, Math.min(50, text.length())));

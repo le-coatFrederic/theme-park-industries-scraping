@@ -5,6 +5,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     restart: unless-stopped
+    user: "1000:1000"
     environment:
       SPRING_DATASOURCE_URL: ${URL_POSTGRES}
       SPRING_DATASOURCE_USERNAME: ${USER_POSTGRESQL}

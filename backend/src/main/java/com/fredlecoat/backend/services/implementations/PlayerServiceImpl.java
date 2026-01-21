@@ -51,15 +51,7 @@ public class PlayerServiceImpl implements PlayerService {
         if (name == null) {
             return null;
         }
-
-        PlayerEntity foundEntity = this.playerRepository.findByName(name);
-        if (foundEntity != null) {
-            return foundEntity;
-        }
-
-        // Create and save new player if not found
-        PlayerEntity newPlayer = new PlayerEntity(name);
-        return this.playerRepository.save(newPlayer);
+        return this.playerRepository.findByName(name);
     }
 
 }

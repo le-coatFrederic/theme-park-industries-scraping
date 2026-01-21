@@ -18,16 +18,7 @@ public class CityServiceImpl implements CityService {
         if (name == null) {
             return null;
         }
-
-        CityEntity foundEntity = this.cityRepository.findByName(name);
-        if (foundEntity != null) {
-            return foundEntity;
-        }
-
-        // Create and save new city if not found
-        CityEntity newCity = new CityEntity();
-        newCity.setName(name);
-        return this.cityRepository.save(newCity);
+        return this.cityRepository.findByName(name);
     }
 
     @Override
