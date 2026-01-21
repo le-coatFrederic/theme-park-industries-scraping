@@ -10,6 +10,7 @@ import java.time.format.DateTimeFormatter;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.fredlecoat.backend.repositories.CityRepository;
 import com.fredlecoat.backend.repositories.DashboardActivityRepository;
@@ -19,6 +20,7 @@ import com.fredlecoat.backend.repositories.RideRepository;
 import com.fredlecoat.backend.services.CsvExportService;
 
 @Service
+@Transactional(readOnly = true)
 public class CsvExportServiceImpl implements CsvExportService {
 
     private static final String DELIMITER = ";";
@@ -39,11 +41,15 @@ public class CsvExportServiceImpl implements CsvExportService {
     @Autowired
     private DashboardActivityRepository dashboardActivityRepository;
 
-    private String exportDirectory = "/exports";
+    private final String exportDirectory = "/exports";
 
     @Override
     public void exportAll() throws IOException {
-        exportAll(Paths.get(exportDirectory));
+        Path directory = Paths.get(exportDirectory);
+        System.out.println("Export CSV vers: " + directory.toAbsolutePath());
+        System.out.println("Dossier existe: " + Files.exists(directory));
+        System.out.println("Dossier writable: " + Files.isWritable(directory));
+        exportAll(directory);
     }
 
     @Override

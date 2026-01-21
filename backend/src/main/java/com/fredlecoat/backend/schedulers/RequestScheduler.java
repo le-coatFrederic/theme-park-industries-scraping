@@ -24,6 +24,7 @@ public class RequestScheduler {
             this.csvExportService.exportAll();
         } catch (Exception e) {
             System.err.println("Erreur export CSV: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
