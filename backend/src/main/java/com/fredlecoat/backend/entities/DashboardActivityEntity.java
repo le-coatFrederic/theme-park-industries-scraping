@@ -1,7 +1,10 @@
 package com.fredlecoat.backend.entities;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import com.fredlecoat.backend.values.DashboardActivityCategory;
 import com.fredlecoat.backend.values.DashboardActivityType;
@@ -15,6 +18,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -25,6 +29,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @Getter
 @Setter
+@Table(name = "dashboard_activity")
 public class DashboardActivityEntity {
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -61,6 +66,12 @@ public class DashboardActivityEntity {
     private RideEntity ride;
 
     private Long amount;
+
+    @CreationTimestamp
+    private Instant createdOn;
+
+    @UpdateTimestamp
+    private Instant updatedOn;
 
     public DashboardActivityEntity(DashboardActivityCategory category, LocalDateTime posted, DashboardActivityType type,
             String text, PlayerEntity player, CityEntity city, ParkEntity actorPark, ParkEntity victimPark,

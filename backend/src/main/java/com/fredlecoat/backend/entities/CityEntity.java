@@ -1,6 +1,10 @@
 package com.fredlecoat.backend.entities;
 
-import com.fredlecoat.backend.values.CityCountry;
+import java.time.Instant;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
 import com.fredlecoat.backend.values.CityDifficulty;
 
 import jakarta.persistence.Entity;
@@ -31,26 +35,37 @@ public class CityEntity {
     @Enumerated(EnumType.STRING)
     private CityDifficulty difficulty;
 
-    @Enumerated(EnumType.STRING)
-    private CityCountry country;
+    private String country;
 
     private Long population;
+
+    private Long availableSurface;
     
     private Long surface;
 
     private int maxHeight;
 
+    private int parkPopulation;
+
     private int parkCapacity;
 
     private int priceByMeter;
 
+    @CreationTimestamp
+    private Instant createdOn;
+
+    @UpdateTimestamp
+    private Instant updatedOn;
+
     public CityEntity(
         String name,
         CityDifficulty difficulty,
-        CityCountry country,
+        String country,
         Long population,
+        Long availableSurface,
         Long surface,
         int maxHeight,
+        int parkPopulation,
         int parkCapacity,
         int priceByMeter
     ) {
@@ -58,8 +73,10 @@ public class CityEntity {
         this.difficulty = difficulty;
         this.country = country;
         this.population = population;
+        this.availableSurface = availableSurface;
         this.surface = surface;
         this.maxHeight = maxHeight;
+        this.parkPopulation = parkPopulation;
         this.parkCapacity = parkCapacity;
         this.priceByMeter = priceByMeter;
     }

@@ -1,7 +1,11 @@
 package com.fredlecoat.backend.entities;
 
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import com.fredlecoat.backend.values.RideType;
 
@@ -43,6 +47,12 @@ public class RideEntity {
     private Long price;
 
     private Long surface;
+
+    @CreationTimestamp
+    private Instant createdOn;
+
+    @UpdateTimestamp
+    private Instant updatedOn;
 
     @ManyToMany(mappedBy = "rides")
     private Set<ParkEntity> parks;
