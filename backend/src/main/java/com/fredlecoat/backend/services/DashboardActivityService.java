@@ -1,9 +1,9 @@
 package com.fredlecoat.backend.services;
 
-import org.openqa.selenium.WebElement;
+import java.util.Map;
 
 import com.fredlecoat.backend.entities.DashboardActivityEntity;
 
 public interface DashboardActivityService {
-    public DashboardActivityEntity create(WebElement element);
+    DashboardActivityEntity create(Map<String, Object> activityData);
 }

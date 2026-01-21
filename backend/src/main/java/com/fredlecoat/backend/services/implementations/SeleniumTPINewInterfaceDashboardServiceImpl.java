@@ -27,18 +27,18 @@ public class SeleniumTPINewInterfaceDashboardServiceImpl implements DashboardSer
 
     @Autowired
     private DashboardActivityService dashboardActivityService;
-    
+
     private String dashboardUrl = "https://themeparkindustries.com/tpiv4/game/monbureau.php";
-    
+
     private int timeout = 10;
 
     private WebDriver driver;
-    
+
     @Override
     public Map<String, String> getPersonalData() {
         Map<String, String> personalData = new HashMap<>();
-        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(timeout));        
-        try {           
+        WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(timeout));
+        try {
             driver.get(dashboardUrl);
 
             ((JavascriptExecutor) driver).executeScript("""
@@ -88,52 +88,65 @@ public class SeleniumTPINewInterfaceDashboardServiceImpl implements DashboardSer
         } catch (Exception e) {
             e.printStackTrace();
         }
-        
+
         return personalData;
     }
-    
+
     @Override
     public List<DashboardActivityEntity> getDashboardActivities() {
         List<DashboardActivityEntity> activities = new ArrayList<>();
-        
+
         try {
             driver = loginService.getDriver();
             driver.get(dashboardUrl);
 
             System.out.println("ON A EU LA PAGE DASHBOARD");
-            
+
             WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(timeout));
-            wait.until(webDriver -> 
+            wait.until(webDriver ->
                 ((JavascriptExecutor) webDriver).executeScript("return document.readyState").equals("complete")
             );
-            
-            List<WebElement> activityElements = wait.until(
+
+            wait.until(
                 ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector(".news-journal__item"))
             );
 
-            System.out.println("Nombre d'activités trouvées: " + activityElements.size());
+            JavascriptExecutor js = (JavascriptExecutor) driver;
 
-            for (int i = 0; i < activityElements.size(); i++) {
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> activitiesData = (List<Map<String, Object>>) js.executeScript(
+                buildActivitiesExtractionScript()
+            );
+
+            System.out.println("Nombre d'activités trouvées: " + activitiesData.size());
+
+            for (int i = 0; i < activitiesData.size(); i++) {
                 try {
-                    WebElement element = activityElements.get(i);
-                    DashboardActivityEntity activity = this.dashboardActivityService.create(element);
+                    Map<String, Object> activityData = activitiesData.get(i);
+                    DashboardActivityEntity activity = this.dashboardActivityService.create(activityData);
                     activities.add(activity);
                     System.out.println("Activité " + (i + 1) + " créée avec succès");
                 } catch (Exception e) {
                     System.err.println("Erreur lors de la création de l'activité " + (i + 1) + ": " + e.getMessage());
-                    e.printStackTrace();
-                    // Continue to next element instead of breaking
                 }
             }
 
         } catch (Exception e) {
             System.err.println("Erreur lors de la récupération des activités du dashboard: " + e.getMessage());
-            e.printStackTrace();
         }
-        
+
         return activities;
     }
-    
+
+    private String buildActivitiesExtractionScript() {
+        return """
+            return Array.from(document.querySelectorAll('.news-journal__item')).map(item => ({
+                date: item.querySelector('.news-journal__date')?.textContent?.trim(),
+                text: item.querySelector('.news-journal__text')?.textContent?.trim()
+            }));
+            """;
+    }
+
     private String getElementText(WebElement element, String cssSelector) {
         try {
             return element.findElement(By.cssSelector(cssSelector)).getText();

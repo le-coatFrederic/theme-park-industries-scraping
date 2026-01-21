@@ -18,14 +18,14 @@ import com.fredlecoat.backend.services.CityService;
 import com.fredlecoat.backend.services.LoginService;
 import com.fredlecoat.backend.services.ParkService;
 import com.fredlecoat.backend.services.PlayerService;
-import com.fredlecoat.backend.services.RideService;
 
 @Component
 public class ParkScraper {
 
     private static final String PARK_PAGE_TEMPLATE = "game/park/fake/monpark.php?id=";
     private static final int DELAY_BETWEEN_PARKS_MS = 1500;
-    private static final int MAX_CONSECUTIVE_ERRORS = 10;
+    private static final int MAX_CONSECUTIVE_ERRORS = 1000;
+    private static final int MAX_PARK_AMOUNT = 5000;
 
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
     private final AtomicInteger currentParkId = new AtomicInteger(1);
@@ -44,9 +44,6 @@ public class ParkScraper {
 
     @Autowired
     private CityService cityService;
-
-    @Autowired
-    private RideService rideService;
 
     public void scrapeAllParks() {
         scrapeAllParks(1);
@@ -81,13 +78,14 @@ public class ParkScraper {
         isRunning.set(true);
         currentParkId.set(startId);
         int consecutiveErrors = 0;
+        int numberOfParks = 0;
 
         System.out.println("DEBUT SCRAPING DES PARCS (ID de depart: " + startId + ")");
 
         try {
             WebDriver driver = loginService.getDriver();
 
-            while (isRunning.get() && consecutiveErrors < MAX_CONSECUTIVE_ERRORS) {
+            while (isRunning.get() && consecutiveErrors < MAX_CONSECUTIVE_ERRORS && numberOfParks < MAX_PARK_AMOUNT) {
                 int parkId = currentParkId.getAndIncrement();
 
                 try {
@@ -95,6 +93,7 @@ public class ParkScraper {
 
                     if (success) {
                         consecutiveErrors = 0;
+                        numberOfParks++;
                     } else {
                         consecutiveErrors++;
                         System.out.println("  Parc " + parkId + " non trouve (" + consecutiveErrors + "/" + MAX_CONSECUTIVE_ERRORS + ")");
@@ -145,6 +144,11 @@ public class ParkScraper {
     }
 
     private void savePark(Map<String, Object> data, int parkId) {
+        if (parkId <= 0) {
+            System.err.println("ERREUR: parkId invalide: " + parkId);
+            return;
+        }
+
         String parkName = data.get("name").toString();
         String ownerName = data.get("owner") != null ? data.get("owner").toString() : "Unknown";
         String location = data.get("location") != null ? data.get("location").toString() : "";
@@ -165,7 +169,7 @@ public class ParkScraper {
 
         if (attractions != null) {
             for (Map<String, Object> attraction : attractions) {
-                linkAttractionToPark(park, attraction);
+                park = linkAttractionToPark(park, attraction);
             }
         }
 
@@ -185,17 +189,15 @@ public class ParkScraper {
         return cityService.findByName(cityName);
     }
 
-    private void linkAttractionToPark(ParkEntity park, Map<String, Object> attractionData) {
+    private ParkEntity linkAttractionToPark(ParkEntity park, Map<String, Object> attractionData) {
         String imageUrl = attractionData.get("imageUrl") != null
             ? normalizeImageUrl(attractionData.get("imageUrl").toString())
             : null;
 
         if (imageUrl != null) {
-            var ride = rideService.findByImageUrl(imageUrl);
-            if (ride != null) {
-                park.addRide(ride);
-            }
+            return parkService.addRideByImageUrl(park, imageUrl);
         }
+        return park;
     }
 
     private String normalizeImageUrl(String rawUrl) {

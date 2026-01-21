@@ -12,6 +12,8 @@ services:
       WEBACCESS_URL: ${URL_TPI}
       WEBACCESS_EMAIL: ${USER_TPI}
       WEBACCESS_PASSWORD: ${PASSWORD_TPI}
+    volumes:
+      - ${VOLUME_TPI_EXPORTS}:/exports
     networks:
       - tpi-scraping-network
 

@@ -22,7 +22,7 @@ public class ParkServiceImpl implements ParkService {
 
     @Override
     public ParkEntity create(ParkEntity entity) {
-        if (entity == null || entity.getName() == null) {
+        if (entity == null || entity.getName() == null || entity.getExternalId() == null) {
             return null;
         }
         ParkEntity foundEntity = this.parkRepository.findByName(entity.getName());
@@ -33,18 +33,19 @@ public class ParkServiceImpl implements ParkService {
     }
 
     @Override
+    public ParkEntity save(ParkEntity entity) {
+        if (entity == null) {
+            return null;
+        }
+        return this.parkRepository.save(entity);
+    }
+
+    @Override
     public ParkEntity findByName(String name) {
         if (name == null) {
             return null;
         }
-
-        ParkEntity foundEntity = this.parkRepository.findByName(name);
-        if (foundEntity != null) {
-            return foundEntity;
-        }
-
-        ParkEntity newPark = new ParkEntity(null, name, null, null);
-        return this.parkRepository.save(newPark);
+        return this.parkRepository.findByName(name);
     }
 
     @Override
@@ -65,13 +66,6 @@ public class ParkServiceImpl implements ParkService {
         return null;
     }
 
-    /**
-     * Adds a ride to a park
-     * @param rideName name of the ride
-     * @param parkName name of the park
-     * @param price price of the ride
-     * @return updated ParkEntity
-     */
     @Override
     @Transactional
     public ParkEntity addRide(ParkEntity park, String rideName) {
@@ -80,6 +74,21 @@ public class ParkServiceImpl implements ParkService {
         }
 
         park.addRide(this.rideService.findByName(rideName));
+        return this.parkRepository.save(park);
+    }
+
+    @Override
+    @Transactional
+    public ParkEntity addRideByImageUrl(ParkEntity park, String imageUrl) {
+        if (park == null || imageUrl == null) {
+            return null;
+        }
+
+        var ride = this.rideService.findByImageUrl(imageUrl);
+        if (ride != null) {
+            park.addRide(ride);
+            return this.parkRepository.save(park);
+        }
         return park;
     }
 }

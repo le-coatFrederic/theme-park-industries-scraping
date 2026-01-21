@@ -1,9 +1,11 @@
 package com.fredlecoat.backend.schedulers;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import com.fredlecoat.backend.services.CsvExportService;
 import com.fredlecoat.backend.services.ScraperService;
 
 @Component
@@ -11,9 +13,18 @@ public class RequestScheduler {
     @Autowired
     private ScraperService scraperService;
 
+    @Autowired 
+    private CsvExportService csvExportService;
+
+
     @Scheduled(fixedRate = 1000 * 3600 * 24) // 24 heures
     public void longScheduler() {
         this.scraperService.getAllTPIStaticData();
+        try {
+            this.csvExportService.exportAll();
+        } catch (Exception e) {
+            System.err.println("Erreur export CSV: " + e.getMessage());
+        }
     }
 
     @Scheduled(fixedRate = 1000 * 60 * 30) // 30 minutes

@@ -2,9 +2,8 @@ package com.fredlecoat.backend.services.implementations;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Map;
 
-import org.openqa.selenium.By;
-import org.openqa.selenium.WebElement;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,41 +48,34 @@ public class DashboardActivityServiceImpl implements DashboardActivityService {
 
     @Override
     @Transactional
-    public DashboardActivityEntity create(WebElement element) {
+    public DashboardActivityEntity create(Map<String, Object> activityData) {
         try {
             DashboardActivityCategory category = DashboardActivityCategory.PARK;
 
-            // Extract date safely
-            String dateText = element.findElement(By.cssSelector(".news-journal__date")).getText();
+            String dateText = activityData.get("date").toString();
             LocalDateTime date = parseActivityDate(dateText);
 
-            // Extract text safely
-            String text = element.findElement(By.className("news-journal__text")).getText();
+            String text = activityData.get("text").toString();
 
             System.out.println("Parsing activity: " + text.substring(0, Math.min(50, text.length())));
 
-            // Parse text to determine activity type
             ParsedNews parsedNews = parsingService.parse(text);
             DashboardActivityType type = parsedNews.type();
 
-            // Handle parsed news (e.g., add rides to parks for BUYING_RIDE activities)
             this.parkService.handleParser(parsedNews);
 
-            // Check if activity already exists with same date, type, category, and text
             var existingActivity = this.repository.findByPostedAndTypeAndCategoryAndText(date, type, category, text);
             if (existingActivity.isPresent()) {
                 System.out.println("Activity already exists: " + text.substring(0, Math.min(50, text.length())));
                 return existingActivity.get();
             }
 
-            // Fetch or create entities from parsed news
             PlayerEntity player = this.playerService.findByName(parsedNews.playerName());
             CityEntity city = this.cityService.findByName(parsedNews.cityName());
             ParkEntity actorPark = this.parkService.findByName(parsedNews.actorParkName());
             ParkEntity victimPark = this.parkService.findByName(parsedNews.victimParkName());
             RideEntity ride = this.rideService.findByName(parsedNews.rideName());
 
-            // Long amount from parsed news
             Long amount = parsedNews.amount() != null ? parsedNews.amount().longValue() : null;
 
             DashboardActivityEntity newActivity = new DashboardActivityEntity(
@@ -110,13 +102,7 @@ public class DashboardActivityServiceImpl implements DashboardActivityService {
         }
     }
 
-    /**
-     * Converts French formatted date string to LocalDateTime
-     * @param dateString formatted as "16/01/2026 à 14:26"
-     * @return LocalDateTime object
-     */
     public LocalDateTime parseActivityDate(String dateString) {
         return LocalDateTime.parse(dateString, DATE_FORMATTER);
     }
-
 }
