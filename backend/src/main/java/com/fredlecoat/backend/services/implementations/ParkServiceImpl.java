@@ -43,9 +43,16 @@ public class ParkServiceImpl implements ParkService {
             return foundEntity;
         }
 
-        // Create and save new park if not found
-        ParkEntity newPark = new ParkEntity(name, null, null);
+        ParkEntity newPark = new ParkEntity(null, name, null, null);
         return this.parkRepository.save(newPark);
+    }
+
+    @Override
+    public ParkEntity findByExternalId(Integer externalId) {
+        if (externalId == null) {
+            return null;
+        }
+        return this.parkRepository.findByExternalId(externalId);
     }
 
     @Override

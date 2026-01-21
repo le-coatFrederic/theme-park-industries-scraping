@@ -7,6 +7,7 @@ import java.util.Set;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -31,6 +32,9 @@ public class ParkEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
+
+    @Column(unique = true)
+    private Integer externalId;
 
     private String name;
 
@@ -57,10 +61,12 @@ public class ParkEntity {
     private Set<RideEntity> rides;
 
     public ParkEntity(
+        Integer externalId,
         String name,
         PlayerEntity owner,
         CityEntity city
     ) {
+        this.externalId = externalId;
         this.name = name;
         this.owner = owner;
         this.city = city;

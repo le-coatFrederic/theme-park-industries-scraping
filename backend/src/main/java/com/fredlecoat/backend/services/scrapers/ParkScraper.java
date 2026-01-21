@@ -18,6 +18,7 @@ import com.fredlecoat.backend.services.CityService;
 import com.fredlecoat.backend.services.LoginService;
 import com.fredlecoat.backend.services.ParkService;
 import com.fredlecoat.backend.services.PlayerService;
+import com.fredlecoat.backend.services.RideService;
 
 @Component
 public class ParkScraper {
@@ -43,6 +44,9 @@ public class ParkScraper {
 
     @Autowired
     private CityService cityService;
+
+    @Autowired
+    private RideService rideService;
 
     public void scrapeAllParks() {
         scrapeAllParks(1);
@@ -147,12 +151,12 @@ public class ParkScraper {
 
         System.out.println("PARC #" + parkId + ": " + parkName + " (Owner: " + ownerName + ")");
 
-        PlayerEntity owner = playerService.findByName(ownerName);
-        CityEntity city = findCityFromLocation(location);
+        ParkEntity park = parkService.findByExternalId(parkId);
 
-        ParkEntity park = parkService.findByName(parkName);
         if (park == null) {
-            park = new ParkEntity(parkName, owner, city);
+            PlayerEntity owner = playerService.findByName(ownerName);
+            CityEntity city = findCityFromLocation(location);
+            park = new ParkEntity(parkId, parkName, owner, city);
             park = parkService.create(park);
         }
 
@@ -182,11 +186,27 @@ public class ParkScraper {
     }
 
     private void linkAttractionToPark(ParkEntity park, Map<String, Object> attractionData) {
-        String rideName = attractionData.get("name") != null ? attractionData.get("name").toString() : null;
+        String imageUrl = attractionData.get("imageUrl") != null
+            ? normalizeImageUrl(attractionData.get("imageUrl").toString())
+            : null;
 
-        if (rideName != null) {
-            parkService.addRide(park, rideName);
+        if (imageUrl != null) {
+            var ride = rideService.findByImageUrl(imageUrl);
+            if (ride != null) {
+                park.addRide(ride);
+            }
         }
+    }
+
+    private String normalizeImageUrl(String rawUrl) {
+        if (rawUrl == null) {
+            return null;
+        }
+        int attractionsIndex = rawUrl.indexOf("attractions/");
+        if (attractionsIndex != -1) {
+            return rawUrl.substring(attractionsIndex + "attractions/".length());
+        }
+        return rawUrl;
     }
 
     private String buildParkExtractionScript() {
@@ -209,37 +229,11 @@ public class ParkScraper {
                 const cards = document.querySelectorAll('.park-attraction-card');
 
                 for (const card of cards) {
-                    const titleEl = card.querySelector('.park-attraction-card__title');
-                    const attractionName = titleEl ? titleEl.textContent.trim() : null;
-
-                    const statusEl = card.querySelector('.park-attraction-card__status');
-                    const status = statusEl ? statusEl.textContent.trim() : null;
-
-                    const typeBadge = card.querySelector('.park-attraction-card__badge--type');
-                    const type = typeBadge ? typeBadge.textContent.trim() : null;
-
-                    const details = {};
-                    const detailElems = card.querySelectorAll('.park-attraction-card__detail');
-                    for (const detail of detailElems) {
-                        const text = detail.textContent.trim();
-                        if (text.includes('Hype')) {
-                            details.hype = text.split(':')[1]?.trim();
-                        } else if (text.includes('Capacit')) {
-                            details.capacity = text.split(':')[1]?.trim();
-                        } else if (text.includes('Constructeur')) {
-                            details.constructor = text.split(':')[1]?.trim();
-                        } else if (text.includes('Hauteur')) {
-                            details.height = text.split(':')[1]?.trim();
-                        } else if (text.includes('Vitesse')) {
-                            details.speed = text.split(':')[1]?.trim();
-                        }
-                    }
+                    const imgEl = card.querySelector('.park-attraction-card__image img');
+                    const imageUrl = imgEl ? imgEl.getAttribute('src') : null;
 
                     attractions.push({
-                        name: attractionName,
-                        status: status,
-                        type: type,
-                        ...details
+                        imageUrl: imageUrl
                     });
                 }
 

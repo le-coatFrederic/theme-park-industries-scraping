@@ -9,6 +9,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import com.fredlecoat.backend.values.RideType;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -48,6 +49,9 @@ public class RideEntity {
 
     private Long surface;
 
+    @Column(unique = true)
+    private String imageUrl;
+
     @CreationTimestamp
     private Instant createdOn;
 
@@ -64,7 +68,8 @@ public class RideEntity {
         String name,
         String brand,
         Long price,
-        Long surface
+        Long surface,
+        String imageUrl
     ) {
         this.type = type;
         this.maxCapacityByHour = maxCapacityByHour;
@@ -73,6 +78,7 @@ public class RideEntity {
         this.brand = brand;
         this.price = price;
         this.surface = surface;
+        this.imageUrl = imageUrl;
 
         this.parks = new HashSet<>();
     }

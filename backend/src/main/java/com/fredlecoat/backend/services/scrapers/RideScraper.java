@@ -58,6 +58,7 @@ public class RideScraper {
         );
 
         JavascriptExecutor js = (JavascriptExecutor) driver;
+        System.out.println("OPEN MODAL, ON A TROUVE LE BOUTON ON CLIQUE DESSUS");
         js.executeScript("arguments[0].click();", shopButton);
 
         return wait.until(
@@ -68,6 +69,7 @@ public class RideScraper {
     private void extractAndSaveRides(WebElement modal) {
         WebDriver driver = ((org.openqa.selenium.remote.RemoteWebElement) modal).getWrappedDriver();
         JavascriptExecutor js = (JavascriptExecutor) driver;
+        System.out.println("EXTRACT AND SAVE RIDES, ON A OUVERT LA MODALE");
 
         String script = buildExtractionScript();
 
@@ -89,6 +91,8 @@ public class RideScraper {
     }
 
     private RideEntity createRideFromData(Map<String, Object> card) {
+        System.out.println("ON CREE L'ATTRACTION " + card.get("constructor") + " : " + card.get("name"));
+
         RideType type = "flatride".equals(card.get("type").toString())
             ? RideType.FLAT_RIDE
             : RideType.COASTER;
@@ -98,6 +102,8 @@ public class RideScraper {
             .trim()
             .replace(" ", "");
 
+        String imageUrl = normalizeImageUrl(card.get("imageUrl").toString());
+
         return new RideEntity(
             type,
             -1,
@@ -105,8 +111,23 @@ public class RideScraper {
             card.get("name").toString(),
             card.get("constructor").toString(),
             Long.parseLong(card.get("price").toString()),
-            Long.valueOf(surfaceStr)
+            Long.valueOf(surfaceStr),
+            imageUrl
         );
+    }
+
+    private String normalizeImageUrl(String rawUrl) {
+        if (rawUrl == null) {
+            return null;
+        }
+        // Extraire la partie relative: "vekoma/img/flyingcoaster.jpg"
+        // depuis "../park/attractions/vekoma/img/flyingcoaster.jpg"
+        // ou "../attractions/vekoma/img/flyingcoaster.jpg"
+        int attractionsIndex = rawUrl.indexOf("attractions/");
+        if (attractionsIndex != -1) {
+            return rawUrl.substring(attractionsIndex + "attractions/".length());
+        }
+        return rawUrl;
     }
 
     private String buildExtractionScript() {
@@ -119,7 +140,8 @@ public class RideScraper {
                 reliability: card.getAttribute('data-reliability'),
                 name: card.querySelector('.attraction-card__title')?.textContent?.trim(),
                 description: card.querySelector('.attraction-card__description strong:last-child')?.textContent?.trim(),
-                manufacturer: card.querySelector('.attraction-card__manufacturer')?.textContent?.trim()
+                manufacturer: card.querySelector('.attraction-card__manufacturer')?.textContent?.trim(),
+                imageUrl: card.querySelector('.attraction-card__image')?.getAttribute('src')
             }));
             """;
     }

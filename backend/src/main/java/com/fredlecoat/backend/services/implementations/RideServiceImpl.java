@@ -35,12 +35,27 @@ public class RideServiceImpl implements RideService {
             return null;
         }
 
+        if (entity.getImageUrl() != null) {
+            RideEntity foundByImage = this.rideRepository.findByImageUrl(entity.getImageUrl());
+            if (foundByImage != null) {
+                return foundByImage;
+            }
+        }
+
         RideEntity foundEntity = this.rideRepository.findByNameAndBrand(entity.getName(), entity.getBrand());
         if (foundEntity != null) {
             return foundEntity;
         }
 
         return this.rideRepository.save(entity);
+    }
+
+    @Override
+    public RideEntity findByImageUrl(String imageUrl) {
+        if (imageUrl == null) {
+            return null;
+        }
+        return this.rideRepository.findByImageUrl(imageUrl);
     }
 
     @Override
@@ -76,7 +91,8 @@ public class RideServiceImpl implements RideService {
                 ride[0],  // name
                 ride[1],  // brand
                 null,  // price
-                null  // surface
+                null,  // surface
+                null   // imageUrl
             );
             return this.rideRepository.save(newRide);
         } catch (Exception e) {

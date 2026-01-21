@@ -8,4 +8,5 @@ import com.fredlecoat.backend.entities.ParkEntity;
 @Repository
 public interface ParkRepository extends JpaRepository<ParkEntity, Long>{
     ParkEntity findByName(String name);
+    ParkEntity findByExternalId(Integer externalId);
 }
