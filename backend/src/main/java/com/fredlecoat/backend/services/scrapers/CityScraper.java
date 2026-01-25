@@ -16,8 +16,11 @@ import org.springframework.stereotype.Component;
 
 import com.fredlecoat.backend.configuration.WebSiteAccessConfig;
 import com.fredlecoat.backend.entities.CityEntity;
+import com.fredlecoat.backend.entities.PlayerEntity;
 import com.fredlecoat.backend.services.CityService;
 import com.fredlecoat.backend.services.LoginService;
+import com.fredlecoat.backend.services.ParkService;
+import com.fredlecoat.backend.services.PlayerService;
 import com.fredlecoat.backend.values.CityDifficulty;
 
 @Component
@@ -35,6 +38,12 @@ public class CityScraper {
 
     @Autowired
     private CityService cityService;
+
+    @Autowired
+    private ParkService parkService;
+
+    @Autowired
+    private PlayerService playerService;
 
     public void scrapeAllCities() {
         System.out.println("DEBUT SCRAPING DES VILLES");
@@ -115,13 +124,72 @@ public class CityScraper {
 
             if (cityDetails != null) {
                 CityEntity city = createCityFromData(cityDetails);
-                cityService.create(city);
+                city = cityService.create(city);
                 System.out.println("      VILLE SAUVEGARDEE: " + city.getName());
+
+                extractAndUpdateParks(js, city);
             }
 
         } catch (Exception e) {
             System.err.println("      ERREUR EXTRACTION VILLE: " + e.getMessage());
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void extractAndUpdateParks(JavascriptExecutor js, CityEntity city) {
+        try {
+            List<Map<String, String>> parksData = (List<Map<String, String>>) js.executeScript(buildParksExtractionScript());
+
+            if (parksData == null || parksData.isEmpty()) {
+                System.out.println("      Aucun parc trouvé pour cette ville");
+                return;
+            }
+
+            System.out.println("      PARCS TROUVES: " + parksData.size());
+
+            for (Map<String, String> parkData : parksData) {
+                String parkName = parkData.get("name");
+                String creatorName = parkData.get("creator");
+
+                if (parkName == null || parkName.isEmpty()) {
+                    continue;
+                }
+
+                PlayerEntity owner = null;
+                if (creatorName != null && !creatorName.isEmpty()) {
+                    owner = playerService.findOrCreate(creatorName);
+                }
+
+                parkService.updateOwnerAndCity(parkName, owner, city);
+            }
+
+        } catch (Exception e) {
+            System.err.println("      ERREUR EXTRACTION PARCS: " + e.getMessage());
+        }
+    }
+
+    private String buildParksExtractionScript() {
+        return """
+            return (function() {
+                const parcsContainer = document.querySelector('.world-map-parcs-items');
+                if (!parcsContainer) return [];
+
+                const parcItems = parcsContainer.querySelectorAll('.world-map-parc-item');
+                const parcs = [];
+
+                for (const item of parcItems) {
+                    const nameElem = item.querySelector('.world-map-parc-name');
+                    const creatorElem = item.querySelector('.world-map-parc-creator strong');
+
+                    parcs.push({
+                        name: nameElem ? nameElem.textContent.trim() : null,
+                        creator: creatorElem ? creatorElem.textContent.trim() : null
+                    });
+                }
+
+                return parcs;
+            })();
+            """;
     }
 
     private CityEntity createCityFromData(Map<String, Object> data) {

@@ -4,7 +4,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fredlecoat.backend.entities.CityEntity;
 import com.fredlecoat.backend.entities.ParkEntity;
+import com.fredlecoat.backend.entities.PlayerEntity;
 import com.fredlecoat.backend.entities.dtos.ParsedNews;
 import com.fredlecoat.backend.repositories.ParkRepository;
 import com.fredlecoat.backend.services.ParkService;
@@ -80,15 +82,40 @@ public class ParkServiceImpl implements ParkService {
     @Override
     @Transactional
     public ParkEntity addRideByImageUrl(ParkEntity park, String imageUrl) {
-        if (park == null || imageUrl == null) {
+        if (park == null || park.getId() == null || imageUrl == null) {
+            return null;
+        }
+
+        // Reload park within this transaction to avoid lazy loading issues
+        ParkEntity managedPark = this.parkRepository.findById(park.getId()).orElse(null);
+        if (managedPark == null) {
             return null;
         }
 
         var ride = this.rideService.findByImageUrl(imageUrl);
         if (ride != null) {
-            park.addRide(ride);
-            return this.parkRepository.save(park);
+            managedPark.addRide(ride);
+            return this.parkRepository.save(managedPark);
         }
-        return park;
+        return managedPark;
+    }
+
+    @Override
+    @Transactional
+    public ParkEntity updateOwnerAndCity(String parkName, PlayerEntity owner, CityEntity city) {
+        if (parkName == null) {
+            return null;
+        }
+
+        ParkEntity park = this.parkRepository.findByName(parkName);
+        if (park == null) {
+            System.out.println("    Parc non trouvé: " + parkName);
+            return null;
+        }
+
+        park.setOwner(owner);
+        park.setCity(city);
+        System.out.println("    Parc mis à jour: " + parkName + " - Owner: " + (owner != null ? owner.getName() : "null") + " - City: " + (city != null ? city.getName() : "null"));
+        return this.parkRepository.save(park);
     }
 }

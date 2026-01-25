@@ -54,4 +54,15 @@ public class PlayerServiceImpl implements PlayerService {
         return this.playerRepository.findByName(name);
     }
 
+    @Override
+    public PlayerEntity findOrCreate(String name) {
+        if (name == null) {
+            return null;
+        }
+        PlayerEntity player = this.playerRepository.findByName(name);
+        if (player != null) {
+            return player;
+        }
+        return this.playerRepository.save(new PlayerEntity(name));
+    }
 }

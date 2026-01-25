@@ -69,7 +69,7 @@ public class CsvExportServiceImpl implements CsvExportService {
     @Override
     public void exportParks(Path filePath) throws IOException {
         try (BufferedWriter writer = Files.newBufferedWriter(filePath, StandardCharsets.UTF_8)) {
-            writer.write("id;external_id;name;owner_id;owner_name;city_id;city_name;created_on;updated_on");
+            writer.write("id;external_id;name;owner_id;owner_name;city_id;city_name;capital;social_capital;yesterday_visitors;used_surface;note;created_on;updated_on");
             writer.newLine();
 
             parkRepository.findAll().forEach(park -> {
@@ -82,6 +82,11 @@ public class CsvExportServiceImpl implements CsvExportService {
                         park.getOwner() != null ? escapeCsv(park.getOwner().getName()) : "",
                         park.getCity() != null ? String.valueOf(park.getCity().getId()) : "",
                         park.getCity() != null ? escapeCsv(park.getCity().getName()) : "",
+                        park.getCapital() != null ? String.valueOf(park.getCapital()) : "",
+                        park.getSocialCapital() != null ? String.valueOf(park.getSocialCapital()) : "",
+                        park.getYesterdayVisitors() != null ? String.valueOf(park.getYesterdayVisitors()) : "",
+                        park.getUsedSurface() != null ? String.valueOf(park.getUsedSurface()) : "",
+                        park.getNote() != null ? String.valueOf(park.getNote()) : "",
                         park.getCreatedOn() != null ? park.getCreatedOn().toString() : "",
                         park.getUpdatedOn() != null ? park.getUpdatedOn().toString() : ""
                     ));

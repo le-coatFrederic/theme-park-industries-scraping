@@ -23,7 +23,7 @@ import com.fredlecoat.backend.services.PlayerService;
 public class ParkScraper {
 
     private static final String PARK_PAGE_TEMPLATE = "game/park/fake/monpark.php?id=";
-    private static final int DELAY_BETWEEN_PARKS_MS = 1500;
+    private static final int DELAY_BETWEEN_PARKS_MS = 250;
     private static final int MAX_CONSECUTIVE_ERRORS = 1000;
     private static final int MAX_PARK_AMOUNT = 5000;
 
@@ -164,6 +164,14 @@ public class ParkScraper {
             park = parkService.create(park);
         }
 
+        // Update park stats
+        park.setCapital(parseMoneyValue(data.get("capital")));
+        park.setSocialCapital(parseMoneyValue(data.get("socialCapital")));
+        park.setYesterdayVisitors(parseIntValue(data.get("yesterdayVisitors")));
+        park.setUsedSurface(parseSurfaceValue(data.get("usedSurface")));
+        park.setNote(parseIntValue(data.get("note")));
+        park = parkService.save(park);
+
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> attractions = (List<Map<String, Object>>) data.get("attractions");
 
@@ -174,6 +182,50 @@ public class ParkScraper {
         }
 
         System.out.println("  -> " + (attractions != null ? attractions.size() : 0) + " attractions liees");
+    }
+
+    private Long parseMoneyValue(Object value) {
+        if (value == null) {
+            return null;
+        }
+        String str = value.toString()
+            .replace("€", "")
+            .replace(" ", "")
+            .trim();
+        try {
+            return Long.parseLong(str);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private Integer parseIntValue(Object value) {
+        if (value == null) {
+            return null;
+        }
+        String str = value.toString()
+            .replace(" ", "")
+            .trim();
+        try {
+            return Integer.parseInt(str);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private Integer parseSurfaceValue(Object value) {
+        if (value == null) {
+            return null;
+        }
+        String str = value.toString()
+            .replace("m²", "")
+            .replace(" ", "")
+            .trim();
+        try {
+            return Integer.parseInt(str);
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     private CityEntity findCityFromLocation(String location) {
@@ -227,6 +279,19 @@ public class ParkScraper {
 
                 let owner = null;
 
+                // Extract stats from park-stats-section__card elements
+                const stats = {};
+                const statCards = document.querySelectorAll('.park-stats-section__card');
+                for (const card of statCards) {
+                    const titleEl = card.querySelector('.park-stats-section__card-title');
+                    const valueEl = card.querySelector('.park-stats-section__card-value');
+                    if (titleEl && valueEl) {
+                        const title = titleEl.textContent.trim();
+                        const value = valueEl.textContent.trim();
+                        stats[title] = value;
+                    }
+                }
+
                 const attractions = [];
                 const cards = document.querySelectorAll('.park-attraction-card');
 
@@ -243,7 +308,12 @@ public class ParkScraper {
                     name: name,
                     location: location,
                     owner: owner,
-                    attractions: attractions
+                    attractions: attractions,
+                    capital: stats['Trésorerie'] || null,
+                    socialCapital: stats['Capital social'] || null,
+                    yesterdayVisitors: stats['Visiteurs hier'] || null,
+                    usedSurface: stats['Surface utilisée'] || null,
+                    note: stats['Note'] || null
                 };
             })();
             """;

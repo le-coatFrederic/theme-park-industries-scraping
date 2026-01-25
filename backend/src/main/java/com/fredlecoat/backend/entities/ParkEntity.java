@@ -46,6 +46,16 @@ public class ParkEntity {
     @JoinColumn(name = "city_id")
     private CityEntity city;
 
+    private Long capital;
+
+    private Long socialCapital;
+
+    private Integer yesterdayVisitors;
+
+    private Integer usedSurface;
+
+    private Integer note;
+
     @CreationTimestamp
     private Instant createdOn;
 
