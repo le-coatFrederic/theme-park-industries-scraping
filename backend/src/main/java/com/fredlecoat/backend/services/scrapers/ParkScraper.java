@@ -11,10 +11,8 @@ import org.springframework.stereotype.Component;
 import com.fredlecoat.backend.configuration.ScrapingConfig;
 import com.fredlecoat.backend.entities.CityEntity;
 import com.fredlecoat.backend.entities.ParkEntity;
-import com.fredlecoat.backend.entities.PlayerEntity;
 import com.fredlecoat.backend.services.CityService;
 import com.fredlecoat.backend.services.ParkService;
-import com.fredlecoat.backend.services.PlayerService;
 import com.fredlecoat.backend.utils.ScrapingParser;
 
 /**
@@ -35,13 +33,11 @@ public class ParkScraper extends BaseScraper {
     private final AtomicInteger currentParkId = new AtomicInteger(1);
 
     private final ParkService parkService;
-    private final PlayerService playerService;
     private final CityService cityService;
 
     @Autowired
-    public ParkScraper(ParkService parkService, PlayerService playerService, CityService cityService) {
+    public ParkScraper(ParkService parkService, CityService cityService) {
         this.parkService = parkService;
-        this.playerService = playerService;
         this.cityService = cityService;
     }
 
@@ -155,39 +151,31 @@ public class ParkScraper extends BaseScraper {
             return;
         }
 
-        ParkEntity park = findOrCreatePark(data, parkId);
-        park = updateParkStats(park, data);
+        ParkEntity park = createOrUpdatePark(data, parkId);
         park = linkAttractions(park, data);
 
         logParkSaved(park, data);
     }
 
-    private ParkEntity findOrCreatePark(Map<String, Object> data, int parkId) {
-        ParkEntity park = parkService.findByExternalId(parkId);
+    private ParkEntity createOrUpdatePark(Map<String, Object> data, int parkId) {
+        String parkName = data.get("name").toString();
+        String location = data.get("location") != null ? data.get("location").toString() : "";
+        CityEntity city = findCityFromLocation(location);
 
-        if (park == null) {
-            String parkName = data.get("name").toString();
-            String ownerName = data.get("owner") != null ? data.get("owner").toString() : "Unknown";
-            String location = data.get("location") != null ? data.get("location").toString() : "";
+        Long capital = parseLongOrDefault(ScrapingParser.parseMoney(data.get("capital")), 0L);
+        Long socialCapital = parseLongOrDefault(ScrapingParser.parseMoney(data.get("socialCapital")), 0L);
+        Integer yesterdayVisitors = ScrapingParser.parseInteger(data.get("yesterdayVisitors"));
+        Integer usedSurface = ScrapingParser.parseIntegerOrDefault(data.get("usedSurface"), 0);
+        Integer note = ScrapingParser.parseIntegerOrDefault(data.get("note"), 0);
 
-            System.out.println("PARC #" + parkId + ": " + parkName + " (Owner: " + ownerName + ")");
+        System.out.println("PARC #" + parkId + ": " + parkName);
 
-            PlayerEntity owner = playerService.findByName(ownerName);
-            CityEntity city = findCityFromLocation(location);
-            park = new ParkEntity(parkId, parkName, owner, city);
-            park = parkService.save(park);
-        }
-
-        return park;
+        ParkEntity park = new ParkEntity(parkId, parkName, city, capital, socialCapital, yesterdayVisitors, usedSurface, note);
+        return parkService.save(park);
     }
 
-    private ParkEntity updateParkStats(ParkEntity park, Map<String, Object> data) {
-        park.setCapital(ScrapingParser.parseMoney(data.get("capital")).longValue());
-        park.setSocialCapital(ScrapingParser.parseMoney(data.get("socialCapital")).longValue());
-        park.setYesterdayVisitors(ScrapingParser.parseInteger(data.get("yesterdayVisitors")));
-        park.setUsedSurface(ScrapingParser.parseSurface(data.get("usedSurface")));
-        park.setNote(ScrapingParser.parseInteger(data.get("note")));
-        return parkService.save(park);
+    private Long parseLongOrDefault(Integer value, Long defaultValue) {
+        return value != null ? value.longValue() : defaultValue;
     }
 
     @SuppressWarnings("unchecked")

@@ -17,6 +17,8 @@ services:
       - ${VOLUME_TPI_EXPORTS}:/exports
     networks:
       - tpi-scraping-network
+    ports:
+      - "${PORT_TPI}:8080"
 
 networks:
   tpi-scraping-network:

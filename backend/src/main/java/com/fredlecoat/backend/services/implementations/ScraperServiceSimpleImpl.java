@@ -55,8 +55,8 @@ public class ScraperServiceSimpleImpl implements ScraperService {
 
     @Override
     public void getAllTPIStaticData() {
-        this.tpiDataService.getAllRidesData();
         this.tpiDataService.getAllCitiesData();
+        this.tpiDataService.getAllRidesData();
         this.tpiDataService.getAllParksData();
     }
 

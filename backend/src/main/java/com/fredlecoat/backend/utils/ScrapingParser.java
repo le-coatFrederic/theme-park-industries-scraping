@@ -46,6 +46,7 @@ public final class ScrapingParser {
         }
         String str = removeAllSpaces(value.toString())
             .replace("m", "")
+            .replace("²", "")
             .trim();
         try {
             return Integer.parseInt(str);

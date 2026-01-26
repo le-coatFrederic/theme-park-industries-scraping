@@ -1,7 +1,6 @@
 package com.fredlecoat.backend.entities;
 
 import java.time.Instant;
-import java.util.HashSet;
 import java.util.Set;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -33,9 +32,10 @@ public class ParkEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
-    @Column(unique = true)
+    @Column(unique = true, nullable = false)
     private Integer externalId;
 
+    @Column(nullable = false)
     private String name;
 
     @ManyToOne
@@ -46,20 +46,26 @@ public class ParkEntity {
     @JoinColumn(name = "city_id")
     private CityEntity city;
 
+    @Column(nullable = false)
     private Long capital;
 
+    @Column(nullable = false)
     private Long socialCapital;
 
     private Integer yesterdayVisitors;
 
+    @Column(nullable = false)
     private Integer usedSurface;
 
+    @Column(nullable = false)
     private Integer note;
 
     @CreationTimestamp
+    @Column(nullable = false)
     private Instant createdOn;
 
     @UpdateTimestamp
+    @Column(nullable = false)
     private Instant updatedOn;
 
     @ManyToMany
@@ -70,19 +76,32 @@ public class ParkEntity {
     )
     private Set<RideEntity> rides;
 
-    public ParkEntity(
-        Integer externalId,
-        String name,
-        PlayerEntity owner,
-        CityEntity city
-    ) {
+    
+
+    public ParkEntity(Integer externalId, String name, CityEntity city, Long capital, Long socialCapital,
+            Integer usedSurface, Integer note) {
         this.externalId = externalId;
         this.name = name;
-        this.owner = owner;
         this.city = city;
-
-        this.rides = new HashSet<>();
+        this.capital = capital;
+        this.socialCapital = socialCapital;
+        this.usedSurface = usedSurface;
+        this.note = note;
     }
+
+    public ParkEntity(Integer externalId, String name, CityEntity city, Long capital, Long socialCapital,
+            Integer yesterdayVisitors, Integer usedSurface, Integer note) {
+        this.externalId = externalId;
+        this.name = name;
+        this.city = city;
+        this.capital = capital;
+        this.socialCapital = socialCapital;
+        this.yesterdayVisitors = yesterdayVisitors;
+        this.usedSurface = usedSurface;
+        this.note = note;
+    }
+
+
 
     public void addRide(RideEntity ride) {
         this.rides.add(ride);

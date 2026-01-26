@@ -23,6 +23,7 @@ public class ParkServiceImpl implements ParkService {
     private RideService rideService;
 
     @Override
+    @Transactional
     public ParkEntity save(ParkEntity entity) {
         if (entity == null || entity.getName() == null) {
             return null;
@@ -38,11 +39,55 @@ public class ParkServiceImpl implements ParkService {
                 existing = this.parkRepository.findByName(entity.getName());
             }
             if (existing != null) {
-                return existing;
+                mergeIntoExisting(existing, entity);
+                return this.parkRepository.save(existing);
             }
         }
 
         return this.parkRepository.save(entity);
+    }
+
+    /**
+     * Met à jour l'entité existante avec les valeurs de la nouvelle entité.
+     * Ne met à jour que les champs null de l'existant ou les champs non-null de la source.
+     */
+    private void mergeIntoExisting(ParkEntity existing, ParkEntity source) {
+        // externalId: on l'ajoute seulement s'il manque
+        if (existing.getExternalId() == null && source.getExternalId() != null) {
+            existing.setExternalId(source.getExternalId());
+        }
+
+        // name: on met à jour si non null
+        if (source.getName() != null) {
+            existing.setName(source.getName());
+        }
+
+        // owner: on met à jour si non null
+        if (source.getOwner() != null) {
+            existing.setOwner(source.getOwner());
+        }
+
+        // city: on met à jour si non null
+        if (source.getCity() != null) {
+            existing.setCity(source.getCity());
+        }
+
+        // Stats: on met à jour si non null
+        if (source.getCapital() != null) {
+            existing.setCapital(source.getCapital());
+        }
+        if (source.getSocialCapital() != null) {
+            existing.setSocialCapital(source.getSocialCapital());
+        }
+        if (source.getYesterdayVisitors() != null) {
+            existing.setYesterdayVisitors(source.getYesterdayVisitors());
+        }
+        if (source.getUsedSurface() != null) {
+            existing.setUsedSurface(source.getUsedSurface());
+        }
+        if (source.getNote() != null) {
+            existing.setNote(source.getNote());
+        }
     }
 
     @Override

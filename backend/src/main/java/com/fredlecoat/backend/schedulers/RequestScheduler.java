@@ -1,7 +1,6 @@
 package com.fredlecoat.backend.schedulers;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -17,7 +16,7 @@ public class RequestScheduler {
     private CsvExportService csvExportService;
 
 
-    @Scheduled(fixedRate = 1000 * 3600 * 24) // 24 heures
+    @Scheduled(cron = "00 00 04 * * ?", zone = "Europe/Paris") // Tous les jours à 4h00
     public void longScheduler() {
         this.scraperService.getAllTPIStaticData();
         try {
