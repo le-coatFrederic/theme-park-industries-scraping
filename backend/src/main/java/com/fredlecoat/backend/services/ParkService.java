@@ -6,7 +6,6 @@ import com.fredlecoat.backend.entities.PlayerEntity;
 import com.fredlecoat.backend.entities.dtos.ParsedNews;
 
 public interface ParkService {
-    ParkEntity create(ParkEntity entity);
     ParkEntity save(ParkEntity entity);
     ParkEntity findByName(String name);
     ParkEntity findByExternalId(Integer externalId);

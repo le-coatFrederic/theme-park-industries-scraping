@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.openqa.selenium.By;
-import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -14,47 +13,50 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.fredlecoat.backend.configuration.WebSiteAccessConfig;
+import com.fredlecoat.backend.configuration.ScrapingConfig;
 import com.fredlecoat.backend.entities.CityEntity;
 import com.fredlecoat.backend.entities.PlayerEntity;
 import com.fredlecoat.backend.services.CityService;
-import com.fredlecoat.backend.services.LoginService;
 import com.fredlecoat.backend.services.ParkService;
 import com.fredlecoat.backend.services.PlayerService;
+import com.fredlecoat.backend.utils.ScrapingParser;
 import com.fredlecoat.backend.values.CityDifficulty;
 
+/**
+ * Scraper for extracting city data from the world map page.
+ *
+ * Responsibilities:
+ * - Navigate through countries and cities on the world map
+ * - Extract city details (population, surface, difficulty, etc.)
+ * - Extract parks associated with each city
+ * - Delegate persistence to appropriate services
+ */
 @Component
-public class CityScraper {
+public class CityScraper extends BaseScraper {
 
-    private static final String WORLD_MAP_PAGE = "game/carte_du_monde.php";
-    private static final int COUNTRY_LOAD_DELAY_MS = 500;
-    private static final int CITY_LOAD_DELAY_MS = 700;
-
-    @Autowired
-    private WebSiteAccessConfig accessConfig;
+    private final CityService cityService;
+    private final ParkService parkService;
+    private final PlayerService playerService;
 
     @Autowired
-    private LoginService loginService;
+    public CityScraper(CityService cityService, ParkService parkService, PlayerService playerService) {
+        this.cityService = cityService;
+        this.parkService = parkService;
+        this.playerService = playerService;
+    }
 
-    @Autowired
-    private CityService cityService;
-
-    @Autowired
-    private ParkService parkService;
-
-    @Autowired
-    private PlayerService playerService;
+    @Override
+    public void scrape() {
+        scrapeAllCities();
+    }
 
     public void scrapeAllCities() {
         System.out.println("DEBUT SCRAPING DES VILLES");
 
         try {
-            WebDriver driver = loginService.getDriver();
-            driver.get(accessConfig.getUrl() + WORLD_MAP_PAGE);
-
-            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
-            iterateCountriesAndCities(driver, wait);
-
+            navigateTo(ScrapingConfig.WORLD_MAP_PAGE);
+            WebDriverWait wait = new WebDriverWait(getDriver(), Duration.ofSeconds(10));
+            iterateCountriesAndCities(wait);
             System.out.println("SCRAPING DES VILLES TERMINE");
 
         } catch (Exception e) {
@@ -63,9 +65,9 @@ public class CityScraper {
         }
     }
 
-    private void iterateCountriesAndCities(WebDriver driver, WebDriverWait wait) throws InterruptedException {
+    private void iterateCountriesAndCities(WebDriverWait wait) throws InterruptedException {
         WebElement countrySelectElement = wait.until(
-            ExpectedConditions.presenceOfElementLocated(By.id("countrySelect"))
+            ExpectedConditions.presenceOfElementLocated(By.id(ScrapingConfig.Selectors.COUNTRY_SELECT))
         );
 
         Select countrySelect = new Select(countrySelectElement);
@@ -73,33 +75,36 @@ public class CityScraper {
         System.out.println("NOMBRE DE PAYS: " + countryCount);
 
         for (int countryIndex = 0; countryIndex < countryCount; countryIndex++) {
-            processCountry(driver, countryIndex);
+            processCountry(countryIndex);
         }
     }
 
-    private void processCountry(WebDriver driver, int countryIndex) throws InterruptedException {
-        Select countrySelect = new Select(driver.findElement(By.id("countrySelect")));
+    private void processCountry(int countryIndex) throws InterruptedException {
+        WebDriver driver = getDriver();
+        Select countrySelect = new Select(driver.findElement(By.id(ScrapingConfig.Selectors.COUNTRY_SELECT)));
         String countryName = countrySelect.getOptions().get(countryIndex).getText();
 
         System.out.println("PAYS: " + countryName);
         countrySelect.selectByIndex(countryIndex);
-        Thread.sleep(COUNTRY_LOAD_DELAY_MS);
+        sleep(ScrapingConfig.COUNTRY_LOAD_DELAY_MS);
 
-        processCitiesInCountry(driver);
+        processCitiesInCountry();
     }
 
-    private void processCitiesInCountry(WebDriver driver) throws InterruptedException {
-        Select citySelect = new Select(driver.findElement(By.id("citySelect")));
+    private void processCitiesInCountry() throws InterruptedException {
+        WebDriver driver = getDriver();
+        Select citySelect = new Select(driver.findElement(By.id(ScrapingConfig.Selectors.CITY_SELECT)));
         int cityCount = citySelect.getOptions().size();
         System.out.println("  NOMBRE DE VILLES: " + cityCount);
 
         for (int cityIndex = 0; cityIndex < cityCount; cityIndex++) {
-            processCity(driver, cityIndex);
+            processCity(cityIndex);
         }
     }
 
-    private void processCity(WebDriver driver, int cityIndex) throws InterruptedException {
-        Select citySelect = new Select(driver.findElement(By.id("citySelect")));
+    private void processCity(int cityIndex) throws InterruptedException {
+        WebDriver driver = getDriver();
+        Select citySelect = new Select(driver.findElement(By.id(ScrapingConfig.Selectors.CITY_SELECT)));
         List<WebElement> cityOptions = citySelect.getOptions();
 
         if (cityIndex >= cityOptions.size()) {
@@ -110,24 +115,21 @@ public class CityScraper {
         System.out.println("    VILLE: " + cityFullName);
 
         citySelect.selectByIndex(cityIndex);
-        Thread.sleep(CITY_LOAD_DELAY_MS);
+        sleep(ScrapingConfig.CITY_LOAD_DELAY_MS);
 
-        extractAndSaveCity(driver);
+        extractAndSaveCity();
     }
 
-    private void extractAndSaveCity(WebDriver driver) {
-        JavascriptExecutor js = (JavascriptExecutor) driver;
-
+    private void extractAndSaveCity() {
         try {
-            @SuppressWarnings("unchecked")
-            Map<String, Object> cityDetails = (Map<String, Object>) js.executeScript(buildCityExtractionScript());
+            Map<String, Object> cityDetails = executeScriptAsMap(CityExtractionScripts.CITY_DETAILS);
 
             if (cityDetails != null) {
                 CityEntity city = createCityFromData(cityDetails);
-                city = cityService.create(city);
+                city = cityService.save(city);
                 System.out.println("      VILLE SAUVEGARDEE: " + city.getName());
 
-                extractAndUpdateParks(js, city);
+                extractAndUpdateParks(city);
             }
 
         } catch (Exception e) {
@@ -136,9 +138,9 @@ public class CityScraper {
     }
 
     @SuppressWarnings("unchecked")
-    private void extractAndUpdateParks(JavascriptExecutor js, CityEntity city) {
+    private void extractAndUpdateParks(CityEntity city) {
         try {
-            List<Map<String, String>> parksData = (List<Map<String, String>>) js.executeScript(buildParksExtractionScript());
+            List<Map<String, String>> parksData = (List<Map<String, String>>) executeScript(CityExtractionScripts.PARKS_LIST);
 
             if (parksData == null || parksData.isEmpty()) {
                 System.out.println("      Aucun parc trouvé pour cette ville");
@@ -148,19 +150,7 @@ public class CityScraper {
             System.out.println("      PARCS TROUVES: " + parksData.size());
 
             for (Map<String, String> parkData : parksData) {
-                String parkName = parkData.get("name");
-                String creatorName = parkData.get("creator");
-
-                if (parkName == null || parkName.isEmpty()) {
-                    continue;
-                }
-
-                PlayerEntity owner = null;
-                if (creatorName != null && !creatorName.isEmpty()) {
-                    owner = playerService.findOrCreate(creatorName);
-                }
-
-                parkService.updateOwnerAndCity(parkName, owner, city);
+                updateParkWithCityAndOwner(parkData, city);
             }
 
         } catch (Exception e) {
@@ -168,44 +158,54 @@ public class CityScraper {
         }
     }
 
-    private String buildParksExtractionScript() {
-        return """
-            return (function() {
-                const parcsContainer = document.querySelector('.world-map-parcs-items');
-                if (!parcsContainer) return [];
+    private void updateParkWithCityAndOwner(Map<String, String> parkData, CityEntity city) {
+        String parkName = parkData.get("name");
+        String creatorName = parkData.get("creator");
 
-                const parcItems = parcsContainer.querySelectorAll('.world-map-parc-item');
-                const parcs = [];
+        if (parkName == null || parkName.isEmpty()) {
+            return;
+        }
 
-                for (const item of parcItems) {
-                    const nameElem = item.querySelector('.world-map-parc-name');
-                    const creatorElem = item.querySelector('.world-map-parc-creator strong');
+        PlayerEntity owner = null;
+        if (creatorName != null && !creatorName.isEmpty()) {
+            owner = playerService.findOrCreate(creatorName);
+        }
 
-                    parcs.push({
-                        name: nameElem ? nameElem.textContent.trim() : null,
-                        creator: creatorElem ? creatorElem.textContent.trim() : null
-                    });
-                }
-
-                return parcs;
-            })();
-            """;
+        parkService.updateOwnerAndCity(parkName, owner, city);
     }
 
     private CityEntity createCityFromData(Map<String, Object> data) {
+
+        data.forEach((k,v) -> {
+            System.out.println(k + " : " + v);
+        });
+
         String cityName = data.get("cityName").toString();
         String country = data.get("country").toString();
         CityDifficulty difficulty = translateDifficulty(data.get("difficulty").toString());
 
-        Long population = parseNumber(data.get("population").toString());
-        Long availableSurface = parseNumber(data.get("surface").toString());
+        Long population = Integer.toUnsignedLong(ScrapingParser.parseInteger(data.get("population")));
+        Long availableSurface = Integer.toUnsignedLong(ScrapingParser.parseSurface(data.get("surface")));
         Long totalSurface = calculateTotalSurface(availableSurface, data.get("fillRate").toString());
 
-        int maxHeight = parseInteger(data.get("maxHeight").toString());
-        int priceByMeter = parseInteger(data.get("pricePerM2").toString());
+        int maxHeight = ScrapingParser.parseIntegerOrDefault(data.get("maxHeight"), 0);
+        int priceByMeter = ScrapingParser.parseMoney(data.get("pricePerM2"));
 
         String capacityStr = data.get("capacity").toString();
         int[] parkData = parseCapacity(capacityStr);
+
+        System.out.println(
+            "City name : " + cityName +
+            "\nDifficulty : " + difficulty +
+            "\nCountry : " + country +
+            "\nPopulation : " + population +
+            "\nAvalaible Surface : " + availableSurface +
+            "\nTotal Surface : " + totalSurface +
+            "\nMax Height : " + maxHeight +
+            "\nNumber of parks : " + parkData[0] +
+            "\nTotal places for parks : " + parkData[1] +
+            "\nPrice by meter : " + priceByMeter
+        );
 
         return new CityEntity(
             cityName,
@@ -222,6 +222,9 @@ public class CityScraper {
     }
 
     private Long calculateTotalSurface(Long availableSurface, String fillRateStr) {
+        if (availableSurface == null) {
+            return null;
+        }
         double fillRate = Double.parseDouble(fillRateStr.replace("%", "").trim()) / 100;
         return Math.round(availableSurface / (1 - fillRate));
     }
@@ -235,24 +238,20 @@ public class CityScraper {
 
     private CityDifficulty translateDifficulty(String difficulty) {
         return switch (difficulty) {
-            case "Facile" -> CityDifficulty.EASY;
-            case "Modéré" -> CityDifficulty.MEDIUM;
-            case "Difficile" -> CityDifficulty.HARD;
+            case ScrapingConfig.DifficultyLabels.EASY -> CityDifficulty.EASY;
+            case ScrapingConfig.DifficultyLabels.MEDIUM -> CityDifficulty.MEDIUM;
+            case ScrapingConfig.DifficultyLabels.HARD -> CityDifficulty.HARD;
             default -> throw new IllegalArgumentException("Difficulté inconnue: " + difficulty);
         };
     }
 
-    private Long parseNumber(String numberStr) {
-        String cleaned = numberStr.replaceAll("[^0-9]", "");
-        return cleaned.isEmpty() ? null : Long.parseLong(cleaned);
-    }
+    /**
+     * JavaScript extraction scripts for city data.
+     * Separated into inner class for better organization.
+     */
+    private static final class CityExtractionScripts {
 
-    private int parseInteger(String str) {
-        return Integer.parseInt(str.replaceAll("[^0-9]", ""));
-    }
-
-    private String buildCityExtractionScript() {
-        return """
+        static final String CITY_DETAILS = """
             return (function() {
                 const cityInfo = document.querySelector('.world-map-city-info');
                 if (!cityInfo) return null;
@@ -308,5 +307,29 @@ public class CityScraper {
                 };
             })();
             """;
+
+        static final String PARKS_LIST = """
+            return (function() {
+                const parcsContainer = document.querySelector('.world-map-parcs-items');
+                if (!parcsContainer) return [];
+
+                const parcItems = parcsContainer.querySelectorAll('.world-map-parc-item');
+                const parcs = [];
+
+                for (const item of parcItems) {
+                    const nameElem = item.querySelector('.world-map-parc-name');
+                    const creatorElem = item.querySelector('.world-map-parc-creator strong');
+
+                    parcs.push({
+                        name: nameElem ? nameElem.textContent.trim() : null,
+                        creator: creatorElem ? creatorElem.textContent.trim() : null
+                    });
+                }
+
+                return parcs;
+            })();
+            """;
+
+        private CityExtractionScripts() {}
     }
 }

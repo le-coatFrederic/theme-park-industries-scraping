@@ -22,7 +22,7 @@ public class CityServiceImpl implements CityService {
     }
 
     @Override
-    public CityEntity create(CityEntity entity) {
+    public CityEntity save(CityEntity entity) {
         if (entity == null || entity.getName() == null) {
             return null;
         }

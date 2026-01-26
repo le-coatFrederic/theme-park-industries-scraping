@@ -13,38 +13,48 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.fredlecoat.backend.configuration.WebSiteAccessConfig;
+import com.fredlecoat.backend.configuration.ScrapingConfig;
 import com.fredlecoat.backend.entities.RideEntity;
-import com.fredlecoat.backend.services.LoginService;
 import com.fredlecoat.backend.services.RideService;
+import com.fredlecoat.backend.utils.ScrapingParser;
 import com.fredlecoat.backend.values.RideType;
 
+/**
+ * Scraper for extracting ride/attraction data from the attractions store.
+ *
+ * Responsibilities:
+ * - Navigate to attractions page and open the store modal
+ * - Extract ride details (name, price, type, hype, surface, etc.)
+ * - Delegate persistence to RideService
+ */
 @Component
-public class RideScraper {
+public class RideScraper extends BaseScraper {
 
-    private static final String ATTRACTIONS_PAGE = "game/park/attractions.php";
-    private static final String SHOP_BUTTON_SELECTOR = "button#open-attraction-store-btn";
     private static final String MODAL_SELECTOR = "#attraction-store-modal";
 
-    @Autowired
-    private WebSiteAccessConfig accessConfig;
+    private final RideService rideService;
 
     @Autowired
-    private LoginService loginService;
+    public RideScraper(RideService rideService) {
+        this.rideService = rideService;
+    }
 
-    @Autowired
-    private RideService rideService;
+    @Override
+    public void scrape() {
+        scrapeAllRides();
+    }
 
     public void scrapeAllRides() {
         System.out.println("DEBUT SCRAPING DES ATTRACTIONS");
 
         try {
-            WebDriver driver = loginService.getDriver();
-            driver.get(accessConfig.getUrl() + ATTRACTIONS_PAGE);
+            navigateTo(ScrapingConfig.ATTRACTIONS_PAGE);
+            WebDriverWait wait = new WebDriverWait(getDriver(), Duration.ofSeconds(10));
 
-            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
-            WebElement modal = openShopModal(driver, wait);
-            extractAndSaveRides(modal);
+            openShopModal(wait);
+            extractAndSaveRides();
+
+            System.out.println("SCRAPING DES ATTRACTIONS TERMINE");
 
         } catch (Exception e) {
             System.err.println("ERREUR SCRAPING ATTRACTIONS: " + e.getMessage());
@@ -52,36 +62,28 @@ public class RideScraper {
         }
     }
 
-    private WebElement openShopModal(WebDriver driver, WebDriverWait wait) {
+    private void openShopModal(WebDriverWait wait) {
         WebElement shopButton = wait.until(
-            ExpectedConditions.elementToBeClickable(By.cssSelector(SHOP_BUTTON_SELECTOR))
+            ExpectedConditions.elementToBeClickable(By.cssSelector(ScrapingConfig.Selectors.OPEN_STORE_BUTTON))
         );
 
-        JavascriptExecutor js = (JavascriptExecutor) driver;
-        System.out.println("OPEN MODAL, ON A TROUVE LE BOUTON ON CLIQUE DESSUS");
-        js.executeScript("arguments[0].click();", shopButton);
+        System.out.println("OUVERTURE DE LA MODALE BOUTIQUE");
+        executeScript("arguments[0].click();", shopButton);
 
-        return wait.until(
+        wait.until(
             ExpectedConditions.visibilityOfElementLocated(By.cssSelector(MODAL_SELECTOR))
         );
     }
 
-    private void extractAndSaveRides(WebElement modal) {
-        WebDriver driver = ((org.openqa.selenium.remote.RemoteWebElement) modal).getWrappedDriver();
-        JavascriptExecutor js = (JavascriptExecutor) driver;
-        System.out.println("EXTRACT AND SAVE RIDES, ON A OUVERT LA MODALE");
-
-        String script = buildExtractionScript();
+    private void extractAndSaveRides() {
+        System.out.println("EXTRACTION DES ATTRACTIONS");
 
         try {
-            @SuppressWarnings("unchecked")
-            List<Map<String, Object>> cardsData = (List<Map<String, Object>>) js.executeScript(script);
+            List<Map<String, Object>> cardsData = extractRidesData();
             System.out.println("NOMBRE D'ATTRACTIONS TROUVEES: " + cardsData.size());
 
             for (Map<String, Object> card : cardsData) {
-                RideEntity ride = createRideFromData(card);
-                rideService.create(ride);
-                System.out.println("ATTRACTION SAUVEGARDEE: " + ride.getName());
+                saveRide(card);
             }
 
         } catch (Exception e) {
@@ -90,48 +92,89 @@ public class RideScraper {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    private List<Map<String, Object>> extractRidesData() {
+        return (List<Map<String, Object>>) executeScript(RideExtractionScripts.ATTRACTIONS_LIST);
+    }
+
+    private void saveRide(Map<String, Object> card) {
+        try {
+            RideEntity ride = createRideFromData(card);
+            rideService.save(ride);
+            System.out.println("ATTRACTION SAUVEGARDEE: " + ride.getName() + " de " + ride.getBrand());
+        } catch (Exception e) {
+            System.err.println("ERREUR SAUVEGARDE ATTRACTION: " + e.getMessage());
+        }
+    }
+
     private RideEntity createRideFromData(Map<String, Object> card) {
-        System.out.println("ON CREE L'ATTRACTION " + card.get("constructor") + " : " + card.get("name"));
+        String name = getStringValue(card, "name");
+        String constructor = getStringValue(card, "constructor");
+        RideType type = parseRideType(getStringValue(card, "type"));
 
-        RideType type = "flatride".equals(card.get("type").toString())
-            ? RideType.FLAT_RIDE
-            : RideType.COASTER;
+        int hype = parseIntAttribute(card, "hype");
+        long price = parseLongAttribute(card, "price");
+        long surface = parseSurface(getStringValue(card, "description"));
 
-        String surfaceStr = card.get("description").toString()
+        String imageUrl = ScrapingParser.normalizeImageUrl(getStringValue(card, "imageUrl"));
+
+        return new RideEntity(type, -1, hype, name, constructor, price, surface, imageUrl);
+    }
+
+    private String getStringValue(Map<String, Object> map, String key) {
+        Object value = map.get(key);
+        return value != null ? value.toString() : "";
+    }
+
+    private RideType parseRideType(String type) {
+        return "flatride".equals(type) ? RideType.FLAT_RIDE : RideType.COASTER;
+    }
+
+    private int parseIntAttribute(Map<String, Object> card, String key) {
+        try {
+            return Integer.parseInt(getStringValue(card, key));
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    private long parseLongAttribute(Map<String, Object> card, String key) {
+        try {
+            return Long.parseLong(getStringValue(card, key));
+        } catch (NumberFormatException e) {
+            return 0L;
+        }
+    }
+
+    private long parseSurface(String description) {
+        if (description == null || description.isEmpty()) {
+            return 0L;
+        }
+        String cleaned = description
             .replace("m²", "")
-            .trim()
-            .replace(" ", "");
-
-        String imageUrl = normalizeImageUrl(card.get("imageUrl").toString());
-
-        return new RideEntity(
-            type,
-            -1,
-            Integer.parseInt(card.get("hype").toString()),
-            card.get("name").toString(),
-            card.get("constructor").toString(),
-            Long.parseLong(card.get("price").toString()),
-            Long.valueOf(surfaceStr),
-            imageUrl
-        );
+            .replace(" ", "")
+            .trim();
+        try {
+            return Long.parseLong(cleaned);
+        } catch (NumberFormatException e) {
+            return 0L;
+        }
     }
 
-    private String normalizeImageUrl(String rawUrl) {
-        if (rawUrl == null) {
-            return null;
-        }
-        // Extraire la partie relative: "vekoma/img/flyingcoaster.jpg"
-        // depuis "../park/attractions/vekoma/img/flyingcoaster.jpg"
-        // ou "../attractions/vekoma/img/flyingcoaster.jpg"
-        int attractionsIndex = rawUrl.indexOf("attractions/");
-        if (attractionsIndex != -1) {
-            return rawUrl.substring(attractionsIndex + "attractions/".length());
-        }
-        return rawUrl;
+    /**
+     * Executes JavaScript with arguments.
+     */
+    private void executeScript(String script, Object... args) {
+        JavascriptExecutor js = (JavascriptExecutor) getDriver();
+        js.executeScript(script, args);
     }
 
-    private String buildExtractionScript() {
-        return """
+    /**
+     * JavaScript extraction scripts for ride data.
+     */
+    private static final class RideExtractionScripts {
+
+        static final String ATTRACTIONS_LIST = """
             return Array.from(document.querySelectorAll('.attraction-card')).map(card => ({
                 constructor: card.getAttribute('data-constructor'),
                 type: card.getAttribute('data-type'),
@@ -144,5 +187,7 @@ public class RideScraper {
                 imageUrl: card.querySelector('.attraction-card__image')?.getAttribute('src')
             }));
             """;
+
+        private RideExtractionScripts() {}
     }
 }

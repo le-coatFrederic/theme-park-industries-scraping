@@ -4,5 +4,5 @@ import com.fredlecoat.backend.entities.CityEntity;
 
 public interface CityService {
     CityEntity findByName(String name);
-    CityEntity create(CityEntity entity);
+    CityEntity save(CityEntity entity);
 }

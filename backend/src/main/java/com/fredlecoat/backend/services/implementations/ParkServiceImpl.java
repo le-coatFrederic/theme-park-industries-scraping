@@ -23,22 +23,25 @@ public class ParkServiceImpl implements ParkService {
     private RideService rideService;
 
     @Override
-    public ParkEntity create(ParkEntity entity) {
-        if (entity == null || entity.getName() == null || entity.getExternalId() == null) {
-            return null;
-        }
-        ParkEntity foundEntity = this.parkRepository.findByName(entity.getName());
-        if (foundEntity != null) {
-            return foundEntity;
-        }
-        return parkRepository.save(entity);
-    }
-
-    @Override
     public ParkEntity save(ParkEntity entity) {
-        if (entity == null) {
+        if (entity == null || entity.getName() == null) {
             return null;
         }
+
+        // Si l'entité n'a pas d'ID, chercher par externalId ou par nom
+        if (entity.getId() == null) {
+            ParkEntity existing = null;
+            if (entity.getExternalId() != null) {
+                existing = this.parkRepository.findByExternalId(entity.getExternalId());
+            }
+            if (existing == null) {
+                existing = this.parkRepository.findByName(entity.getName());
+            }
+            if (existing != null) {
+                return existing;
+            }
+        }
+
         return this.parkRepository.save(entity);
     }
 

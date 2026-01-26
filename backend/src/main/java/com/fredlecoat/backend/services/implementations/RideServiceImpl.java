@@ -30,7 +30,7 @@ public class RideServiceImpl implements RideService {
     }
 
     @Override
-    public RideEntity create(RideEntity entity) {
+    public RideEntity save(RideEntity entity) {
         if (entity == null) {
             return null;
         }

@@ -6,5 +6,5 @@ public interface RideService {
     RideEntity findById(Long id);
     RideEntity findByName(String name);
     RideEntity findByImageUrl(String imageUrl);
-    RideEntity create(RideEntity entity);
+    RideEntity save(RideEntity entity);
 }

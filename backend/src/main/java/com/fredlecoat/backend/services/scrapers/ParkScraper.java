@@ -5,45 +5,50 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.openqa.selenium.JavascriptExecutor;
-import org.openqa.selenium.WebDriver;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.fredlecoat.backend.configuration.WebSiteAccessConfig;
+import com.fredlecoat.backend.configuration.ScrapingConfig;
 import com.fredlecoat.backend.entities.CityEntity;
 import com.fredlecoat.backend.entities.ParkEntity;
 import com.fredlecoat.backend.entities.PlayerEntity;
 import com.fredlecoat.backend.services.CityService;
-import com.fredlecoat.backend.services.LoginService;
 import com.fredlecoat.backend.services.ParkService;
 import com.fredlecoat.backend.services.PlayerService;
+import com.fredlecoat.backend.utils.ScrapingParser;
 
+/**
+ * Scraper for extracting park data from individual park pages.
+ *
+ * Responsibilities:
+ * - Iterate through park IDs and fetch park pages
+ * - Extract park details (name, stats, attractions)
+ * - Manage scraping state (running, current ID, errors)
+ * - Delegate persistence to ParkService
+ *
+ * Note: This scraper runs in a background thread to avoid blocking.
+ */
 @Component
-public class ParkScraper {
-
-    private static final String PARK_PAGE_TEMPLATE = "game/park/fake/monpark.php?id=";
-    private static final int DELAY_BETWEEN_PARKS_MS = 250;
-    private static final int MAX_CONSECUTIVE_ERRORS = 1000;
-    private static final int MAX_PARK_AMOUNT = 5000;
+public class ParkScraper extends BaseScraper {
 
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
     private final AtomicInteger currentParkId = new AtomicInteger(1);
 
-    @Autowired
-    private WebSiteAccessConfig accessConfig;
+    private final ParkService parkService;
+    private final PlayerService playerService;
+    private final CityService cityService;
 
     @Autowired
-    private LoginService loginService;
+    public ParkScraper(ParkService parkService, PlayerService playerService, CityService cityService) {
+        this.parkService = parkService;
+        this.playerService = playerService;
+        this.cityService = cityService;
+    }
 
-    @Autowired
-    private ParkService parkService;
-
-    @Autowired
-    private PlayerService playerService;
-
-    @Autowired
-    private CityService cityService;
+    @Override
+    public void scrape() {
+        scrapeAllParks();
+    }
 
     public void scrapeAllParks() {
         scrapeAllParks(1);
@@ -77,39 +82,18 @@ public class ParkScraper {
     private void runScrapingLoop(int startId) {
         isRunning.set(true);
         currentParkId.set(startId);
-        int consecutiveErrors = 0;
-        int numberOfParks = 0;
 
+        ScrapingProgress progress = new ScrapingProgress();
         System.out.println("DEBUT SCRAPING DES PARCS (ID de depart: " + startId + ")");
 
         try {
-            WebDriver driver = loginService.getDriver();
-
-            while (isRunning.get() && consecutiveErrors < MAX_CONSECUTIVE_ERRORS && numberOfParks < MAX_PARK_AMOUNT) {
+            while (shouldContinueScraping(progress)) {
                 int parkId = currentParkId.getAndIncrement();
-
-                try {
-                    boolean success = scrapePark(driver, parkId);
-
-                    if (success) {
-                        consecutiveErrors = 0;
-                        numberOfParks++;
-                    } else {
-                        consecutiveErrors++;
-                        System.out.println("  Parc " + parkId + " non trouve (" + consecutiveErrors + "/" + MAX_CONSECUTIVE_ERRORS + ")");
-                    }
-
-                    Thread.sleep(DELAY_BETWEEN_PARKS_MS);
-
-                } catch (Exception e) {
-                    consecutiveErrors++;
-                    System.err.println("ERREUR PARC " + parkId + ": " + e.getMessage());
-                }
+                processPark(parkId, progress);
+                sleep(ScrapingConfig.DELAY_BETWEEN_PARKS_MS);
             }
 
-            if (consecutiveErrors >= MAX_CONSECUTIVE_ERRORS) {
-                System.out.println("ARRET: " + MAX_CONSECUTIVE_ERRORS + " erreurs consecutives");
-            }
+            logScrapingEnd(progress);
 
         } catch (Exception e) {
             System.err.println("ERREUR FATALE SCRAPING: " + e.getMessage());
@@ -120,20 +104,42 @@ public class ParkScraper {
         }
     }
 
-    private boolean scrapePark(WebDriver driver, int parkId) {
-        String url = accessConfig.getUrl() + PARK_PAGE_TEMPLATE + parkId;
-        driver.get(url);
+    private boolean shouldContinueScraping(ScrapingProgress progress) {
+        return isRunning.get()
+            && progress.consecutiveErrors < ScrapingConfig.MAX_CONSECUTIVE_ERRORS
+            && progress.successCount < ScrapingConfig.MAX_PARK_AMOUNT;
+    }
 
+    private void processPark(int parkId, ScrapingProgress progress) {
         try {
-            Thread.sleep(500);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+            boolean success = scrapePark(parkId);
+
+            if (success) {
+                progress.consecutiveErrors = 0;
+                progress.successCount++;
+            } else {
+                progress.consecutiveErrors++;
+                System.out.println("  Parc " + parkId + " non trouve (" +
+                    progress.consecutiveErrors + "/" + ScrapingConfig.MAX_CONSECUTIVE_ERRORS + ")");
+            }
+
+        } catch (Exception e) {
+            progress.consecutiveErrors++;
+            System.err.println("ERREUR PARC " + parkId + ": " + e.getMessage());
         }
+    }
 
-        JavascriptExecutor js = (JavascriptExecutor) driver;
+    private void logScrapingEnd(ScrapingProgress progress) {
+        if (progress.consecutiveErrors >= ScrapingConfig.MAX_CONSECUTIVE_ERRORS) {
+            System.out.println("ARRET: " + ScrapingConfig.MAX_CONSECUTIVE_ERRORS + " erreurs consecutives");
+        }
+    }
 
-        @SuppressWarnings("unchecked")
-        Map<String, Object> parkData = (Map<String, Object>) js.executeScript(buildParkExtractionScript());
+    private boolean scrapePark(int parkId) {
+        navigateTo(ScrapingConfig.PARK_PAGE_TEMPLATE + parkId);
+        sleep(ScrapingConfig.PAGE_LOAD_DELAY_MS);
+
+        Map<String, Object> parkData = executeScriptAsMap(ParkExtractionScripts.PARK_DETAILS);
 
         if (parkData == null || parkData.get("name") == null) {
             return false;
@@ -149,83 +155,60 @@ public class ParkScraper {
             return;
         }
 
-        String parkName = data.get("name").toString();
-        String ownerName = data.get("owner") != null ? data.get("owner").toString() : "Unknown";
-        String location = data.get("location") != null ? data.get("location").toString() : "";
+        ParkEntity park = findOrCreatePark(data, parkId);
+        park = updateParkStats(park, data);
+        park = linkAttractions(park, data);
 
-        System.out.println("PARC #" + parkId + ": " + parkName + " (Owner: " + ownerName + ")");
+        logParkSaved(park, data);
+    }
 
+    private ParkEntity findOrCreatePark(Map<String, Object> data, int parkId) {
         ParkEntity park = parkService.findByExternalId(parkId);
 
         if (park == null) {
+            String parkName = data.get("name").toString();
+            String ownerName = data.get("owner") != null ? data.get("owner").toString() : "Unknown";
+            String location = data.get("location") != null ? data.get("location").toString() : "";
+
+            System.out.println("PARC #" + parkId + ": " + parkName + " (Owner: " + ownerName + ")");
+
             PlayerEntity owner = playerService.findByName(ownerName);
             CityEntity city = findCityFromLocation(location);
             park = new ParkEntity(parkId, parkName, owner, city);
-            park = parkService.create(park);
+            park = parkService.save(park);
         }
 
-        // Update park stats
-        park.setCapital(parseMoneyValue(data.get("capital")));
-        park.setSocialCapital(parseMoneyValue(data.get("socialCapital")));
-        park.setYesterdayVisitors(parseIntValue(data.get("yesterdayVisitors")));
-        park.setUsedSurface(parseSurfaceValue(data.get("usedSurface")));
-        park.setNote(parseIntValue(data.get("note")));
-        park = parkService.save(park);
+        return park;
+    }
 
-        @SuppressWarnings("unchecked")
+    private ParkEntity updateParkStats(ParkEntity park, Map<String, Object> data) {
+        park.setCapital(ScrapingParser.parseMoney(data.get("capital")).longValue());
+        park.setSocialCapital(ScrapingParser.parseMoney(data.get("socialCapital")).longValue());
+        park.setYesterdayVisitors(ScrapingParser.parseInteger(data.get("yesterdayVisitors")));
+        park.setUsedSurface(ScrapingParser.parseSurface(data.get("usedSurface")));
+        park.setNote(ScrapingParser.parseInteger(data.get("note")));
+        return parkService.save(park);
+    }
+
+    @SuppressWarnings("unchecked")
+    private ParkEntity linkAttractions(ParkEntity park, Map<String, Object> data) {
         List<Map<String, Object>> attractions = (List<Map<String, Object>>) data.get("attractions");
 
-        if (attractions != null) {
-            for (Map<String, Object> attraction : attractions) {
-                park = linkAttractionToPark(park, attraction);
-            }
+        if (attractions == null) {
+            return park;
         }
 
+        for (Map<String, Object> attraction : attractions) {
+            park = linkAttractionToPark(park, attraction);
+        }
+
+        return park;
+    }
+
+    private void logParkSaved(ParkEntity park, Map<String, Object> data) {
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> attractions = (List<Map<String, Object>>) data.get("attractions");
         System.out.println("  -> " + (attractions != null ? attractions.size() : 0) + " attractions liees");
-    }
-
-    private Long parseMoneyValue(Object value) {
-        if (value == null) {
-            return null;
-        }
-        String str = value.toString()
-            .replace("€", "")
-            .replace(" ", "")
-            .trim();
-        try {
-            return Long.parseLong(str);
-        } catch (NumberFormatException e) {
-            return null;
-        }
-    }
-
-    private Integer parseIntValue(Object value) {
-        if (value == null) {
-            return null;
-        }
-        String str = value.toString()
-            .replace(" ", "")
-            .trim();
-        try {
-            return Integer.parseInt(str);
-        } catch (NumberFormatException e) {
-            return null;
-        }
-    }
-
-    private Integer parseSurfaceValue(Object value) {
-        if (value == null) {
-            return null;
-        }
-        String str = value.toString()
-            .replace("m²", "")
-            .replace(" ", "")
-            .trim();
-        try {
-            return Integer.parseInt(str);
-        } catch (NumberFormatException e) {
-            return null;
-        }
     }
 
     private CityEntity findCityFromLocation(String location) {
@@ -233,6 +216,7 @@ public class ParkScraper {
             return null;
         }
 
+        // Remove location pin emoji and extract city name
         String cityName = location.replace("\uD83D\uDCCD", "").trim();
         if (cityName.contains(",")) {
             cityName = cityName.split(",")[0].trim();
@@ -242,29 +226,32 @@ public class ParkScraper {
     }
 
     private ParkEntity linkAttractionToPark(ParkEntity park, Map<String, Object> attractionData) {
-        String imageUrl = attractionData.get("imageUrl") != null
-            ? normalizeImageUrl(attractionData.get("imageUrl").toString())
-            : null;
+        Object imageUrlObj = attractionData.get("imageUrl");
+        if (imageUrlObj == null) {
+            return park;
+        }
 
+        String imageUrl = ScrapingParser.normalizeImageUrl(imageUrlObj.toString());
         if (imageUrl != null) {
             return parkService.addRideByImageUrl(park, imageUrl);
         }
         return park;
     }
 
-    private String normalizeImageUrl(String rawUrl) {
-        if (rawUrl == null) {
-            return null;
-        }
-        int attractionsIndex = rawUrl.indexOf("attractions/");
-        if (attractionsIndex != -1) {
-            return rawUrl.substring(attractionsIndex + "attractions/".length());
-        }
-        return rawUrl;
+    /**
+     * Helper class to track scraping progress.
+     */
+    private static class ScrapingProgress {
+        int consecutiveErrors = 0;
+        int successCount = 0;
     }
 
-    private String buildParkExtractionScript() {
-        return """
+    /**
+     * JavaScript extraction scripts for park data.
+     */
+    private static final class ParkExtractionScripts {
+
+        static final String PARK_DETAILS = """
             return (function() {
                 const hero = document.querySelector('.park-hero');
                 if (!hero) return null;
@@ -317,5 +304,7 @@ public class ParkScraper {
                 };
             })();
             """;
+
+        private ParkExtractionScripts() {}
     }
 }
