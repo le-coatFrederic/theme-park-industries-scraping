@@ -27,11 +27,34 @@ public class CityServiceImpl implements CityService {
             return null;
         }
 
-        CityEntity foundEntity = this.cityRepository.findByName(entity.getName());
-        if (foundEntity != null) {
-            return foundEntity;
+        CityEntity existing = this.cityRepository.findByName(entity.getName());
+        if (existing != null) {
+            mergeIntoExisting(existing, entity);
+            return this.cityRepository.save(existing);
         }
 
         return this.cityRepository.save(entity);
+    }
+
+    private void mergeIntoExisting(CityEntity existing, CityEntity source) {
+        if (source.getDifficulty() != null) {
+            existing.setDifficulty(source.getDifficulty());
+        }
+        if (source.getCountry() != null) {
+            existing.setCountry(source.getCountry());
+        }
+        if (source.getPopulation() != null) {
+            existing.setPopulation(source.getPopulation());
+        }
+        if (source.getAvailableSurface() != null) {
+            existing.setAvailableSurface(source.getAvailableSurface());
+        }
+        if (source.getSurface() != null) {
+            existing.setSurface(source.getSurface());
+        }
+        existing.setMaxHeight(source.getMaxHeight());
+        existing.setParkPopulation(source.getParkPopulation());
+        existing.setParkCapacity(source.getParkCapacity());
+        existing.setPriceByMeter(source.getPriceByMeter());
     }
 }

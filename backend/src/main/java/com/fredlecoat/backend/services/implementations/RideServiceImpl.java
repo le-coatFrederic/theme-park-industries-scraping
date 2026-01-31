@@ -35,19 +35,39 @@ public class RideServiceImpl implements RideService {
             return null;
         }
 
+        RideEntity existing = null;
+
         if (entity.getImageUrl() != null) {
-            RideEntity foundByImage = this.rideRepository.findByImageUrl(entity.getImageUrl());
-            if (foundByImage != null) {
-                return foundByImage;
-            }
+            existing = this.rideRepository.findByImageUrl(entity.getImageUrl());
         }
 
-        RideEntity foundEntity = this.rideRepository.findByNameAndBrand(entity.getName(), entity.getBrand());
-        if (foundEntity != null) {
-            return foundEntity;
+        if (existing == null) {
+            existing = this.rideRepository.findByNameAndBrand(entity.getName(), entity.getBrand());
+        }
+
+        if (existing != null) {
+            mergeIntoExisting(existing, entity);
+            return this.rideRepository.save(existing);
         }
 
         return this.rideRepository.save(entity);
+    }
+
+    private void mergeIntoExisting(RideEntity existing, RideEntity source) {
+        if (source.getType() != null) {
+            existing.setType(source.getType());
+        }
+        existing.setMaxCapacityByHour(source.getMaxCapacityByHour());
+        existing.setHype(source.getHype());
+        if (source.getPrice() != null) {
+            existing.setPrice(source.getPrice());
+        }
+        if (source.getSurface() != null) {
+            existing.setSurface(source.getSurface());
+        }
+        if (existing.getImageUrl() == null && source.getImageUrl() != null) {
+            existing.setImageUrl(source.getImageUrl());
+        }
     }
 
     @Override
