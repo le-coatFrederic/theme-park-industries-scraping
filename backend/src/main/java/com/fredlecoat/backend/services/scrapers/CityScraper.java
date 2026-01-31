@@ -226,6 +226,7 @@ public class CityScraper extends BaseScraper {
             return null;
         }
         double fillRate = Double.parseDouble(fillRateStr.replace("%", "").trim()) / 100;
+        System.out.println("FillRateStr : " + fillRateStr + " - FillRate : " + fillRate);
         return Math.round(availableSurface / (1 - fillRate));
     }
 

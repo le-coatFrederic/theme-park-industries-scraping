@@ -16,7 +16,7 @@ public class RequestScheduler {
     private CsvExportService csvExportService;
 
 
-    @Scheduled(cron = "00 00 04 * * ?", zone = "Europe/Paris") // Tous les jours à 4h00
+    @Scheduled(cron = "0 0 */3 * * ?", zone = "Europe/Paris") // Toutes les six heures
     public void longScheduler() {
         this.scraperService.getAllTPIStaticData();
         try {

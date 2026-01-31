@@ -33,9 +33,10 @@ public class ParkServiceImpl implements ParkService {
         if (entity.getId() == null) {
             ParkEntity existing = null;
             if (entity.getExternalId() != null) {
+                // Recherche par externalId uniquement (identifiant unique)
                 existing = this.parkRepository.findByExternalId(entity.getExternalId());
-            }
-            if (existing == null) {
+            } else {
+                // Pas d'externalId, fallback sur le nom (données legacy)
                 existing = this.parkRepository.findByName(entity.getName());
             }
             if (existing != null) {
