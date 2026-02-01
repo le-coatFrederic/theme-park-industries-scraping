@@ -60,4 +60,25 @@ public class ScraperServiceSimpleImpl implements ScraperService {
         this.tpiDataService.getAllParksData();
     }
 
+    @Override
+    public void getAllRidesData() {
+        this.tpiDataService.getAllRidesData();
+    }
+
+    @Override
+    public void getAllCitiesData() {
+        this.tpiDataService.getAllCitiesData();
+    }
+
+    @Override
+    public void getAllParksData() {
+        this.tpiDataService.getAllParksData();
+    }
+
+    @Override
+    public void getAllHoldingsData() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getAllHoldingsData'");
+    }
+
 }

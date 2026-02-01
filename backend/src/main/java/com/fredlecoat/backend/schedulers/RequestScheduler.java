@@ -15,10 +15,9 @@ public class RequestScheduler {
     @Autowired 
     private CsvExportService csvExportService;
 
-
-    @Scheduled(cron = "0 0 */3 * * ?", zone = "Europe/Paris") // Toutes les six heures
-    public void longScheduler() {
-        this.scraperService.getAllTPIStaticData();
+    @Scheduled(cron = "0 0 * * * ?", zone = "Europe/Paris") // Tous les jours
+    public void daily() {
+        this.scraperService.getAllRidesData();
         try {
             this.csvExportService.exportAll();
         } catch (Exception e) {
@@ -27,10 +26,22 @@ public class RequestScheduler {
         }
     }
 
+    @Scheduled(cron = "0 0 */6 * * ?", zone = "Europe/Paris") // Toutes les six heures
+    public void longScheduler() {
+        this.scraperService.getAllParksData();
+    }
+
     @Scheduled(fixedRate = 1000 * 60 * 30) // 30 minutes
     public void mediumScheduler() {
-        //System.out.println("########## PERSONAL DATA ##########");
-        //this.scraperService.getPersonalData();
+        this.scraperService.getAllCitiesData();
+
+        // EXPORT DE LA DATA EN CSV
+        try {
+            this.csvExportService.exportAll();
+        } catch (Exception e) {
+            System.err.println("Erreur export CSV: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     @Scheduled(fixedRate = 1000 * 60) // 1 minute

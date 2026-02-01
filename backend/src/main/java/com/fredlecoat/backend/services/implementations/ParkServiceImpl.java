@@ -1,5 +1,7 @@
 package com.fredlecoat.backend.services.implementations;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -105,6 +107,16 @@ public class ParkServiceImpl implements ParkService {
             return null;
         }
         return this.parkRepository.findByExternalId(externalId);
+    }
+
+    @Override
+    public List<Integer> findAllExternalIds() {
+        return this.parkRepository.findAllExternalIds();
+    }
+
+    @Override
+    public Integer findMaxExternalId() {
+        return this.parkRepository.findMaxExternalId();
     }
 
     @Override

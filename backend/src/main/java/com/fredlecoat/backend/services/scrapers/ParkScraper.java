@@ -47,16 +47,12 @@ public class ParkScraper extends BaseScraper {
     }
 
     public void scrapeAllParks() {
-        scrapeAllParks(1);
-    }
-
-    public void scrapeAllParks(int startId) {
         if (isRunning.get()) {
             System.out.println("SCRAPING DEJA EN COURS");
             return;
         }
 
-        Thread scraperThread = new Thread(() -> runScrapingLoop(startId));
+        Thread scraperThread = new Thread(this::runFullScraping);
         scraperThread.setName("ParkScraper-Thread");
         scraperThread.setDaemon(true);
         scraperThread.start();
@@ -75,21 +71,17 @@ public class ParkScraper extends BaseScraper {
         return isRunning.get();
     }
 
-    private void runScrapingLoop(int startId) {
+    private void runFullScraping() {
         isRunning.set(true);
-        currentParkId.set(startId);
-
-        ScrapingProgress progress = new ScrapingProgress();
-        System.out.println("DEBUT SCRAPING DES PARCS (ID de depart: " + startId + ")");
 
         try {
-            while (shouldContinueScraping(progress)) {
-                int parkId = currentParkId.getAndIncrement();
-                processPark(parkId, progress);
-                sleep(ScrapingConfig.DELAY_BETWEEN_PARKS_MS);
-            }
+            // Phase 1: Mise à jour des parcs existants
+            updateExistingParks();
 
-            logScrapingEnd(progress);
+            // Phase 2: Recherche de nouveaux parcs
+            if (isRunning.get()) {
+                searchNewParks();
+            }
 
         } catch (Exception e) {
             System.err.println("ERREUR FATALE SCRAPING: " + e.getMessage());
@@ -100,34 +92,72 @@ public class ParkScraper extends BaseScraper {
         }
     }
 
-    private boolean shouldContinueScraping(ScrapingProgress progress) {
-        return isRunning.get()
-            && progress.consecutiveErrors < ScrapingConfig.MAX_CONSECUTIVE_ERRORS
-            && progress.successCount < ScrapingConfig.MAX_PARK_AMOUNT;
+    private void updateExistingParks() {
+        List<Integer> existingIds = parkService.findAllExternalIds();
+        System.out.println("=== PHASE 1: MISE A JOUR DE " + existingIds.size() + " PARCS EXISTANTS ===");
+
+        int updated = 0;
+        for (Integer parkId : existingIds) {
+            if (!isRunning.get()) {
+                break;
+            }
+
+            currentParkId.set(parkId);
+            try {
+                if (scrapePark(parkId)) {
+                    updated++;
+                }
+            } catch (Exception e) {
+                System.err.println("ERREUR MAJ PARC " + parkId + ": " + e.getMessage());
+            }
+            sleep(ScrapingConfig.DELAY_BETWEEN_PARKS_MS);
+        }
+
+        System.out.println("=== FIN PHASE 1: " + updated + "/" + existingIds.size() + " parcs mis a jour ===");
     }
 
-    private void processPark(int parkId, ScrapingProgress progress) {
+    private void searchNewParks() {
+        Integer maxId = parkService.findMaxExternalId();
+        int startId = (maxId != null) ? maxId + 1 : 1;
+
+        System.out.println("=== PHASE 2: RECHERCHE DE NOUVEAUX PARCS (a partir de #" + startId + ") ===");
+
+        currentParkId.set(startId);
+        ScrapingProgress progress = new ScrapingProgress();
+
+        while (shouldContinueSearching(progress)) {
+            int parkId = currentParkId.getAndIncrement();
+            processNewPark(parkId, progress);
+            sleep(ScrapingConfig.DELAY_BETWEEN_PARKS_MS);
+        }
+
+        System.out.println("=== FIN PHASE 2: " + progress.successCount + " nouveaux parcs trouves ===");
+
+        if (progress.consecutiveErrors >= ScrapingConfig.MAX_CONSECUTIVE_ERRORS) {
+            System.out.println("ARRET: " + ScrapingConfig.MAX_CONSECUTIVE_ERRORS + " erreurs consecutives");
+        }
+    }
+
+    private boolean shouldContinueSearching(ScrapingProgress progress) {
+        return isRunning.get()
+            && progress.consecutiveErrors < ScrapingConfig.MAX_CONSECUTIVE_ERRORS;
+    }
+
+    private void processNewPark(int parkId, ScrapingProgress progress) {
         try {
             boolean success = scrapePark(parkId);
 
             if (success) {
                 progress.consecutiveErrors = 0;
                 progress.successCount++;
+                System.out.println("  NOUVEAU PARC #" + parkId + " trouve!");
             } else {
                 progress.consecutiveErrors++;
-                System.out.println("  Parc " + parkId + " non trouve (" +
-                    progress.consecutiveErrors + "/" + ScrapingConfig.MAX_CONSECUTIVE_ERRORS + ")");
             }
 
         } catch (Exception e) {
             progress.consecutiveErrors++;
             System.err.println("ERREUR PARC " + parkId + ": " + e.getMessage());
-        }
-    }
-
-    private void logScrapingEnd(ScrapingProgress progress) {
-        if (progress.consecutiveErrors >= ScrapingConfig.MAX_CONSECUTIVE_ERRORS) {
-            System.out.println("ARRET: " + ScrapingConfig.MAX_CONSECUTIVE_ERRORS + " erreurs consecutives");
         }
     }
 
